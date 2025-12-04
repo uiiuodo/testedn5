@@ -41,88 +41,102 @@ class PersonEditScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 1. Name / Nickname & Group Selection
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          FocusScope.of(context).requestFocus(nameFocusNode);
-                        },
+              // 1. Name / Nickname & Group Selection (Inline Row)
+              GestureDetector(
+                onTap: () {
+                  FocusScope.of(context).requestFocus(nameFocusNode);
+                },
+                behavior: HitTestBehavior.opaque,
+                child: Row(
+                  children: [
+                    // Label
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: const [
+                        Text(
+                          '이름 / 애칭',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF999999),
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          '(필수)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w300,
+                            color: Color(0xFF999999),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 16),
+
+                    // Inline Input
+                    Expanded(
+                      child: TextField(
+                        controller: controller.nameController,
+                        focusNode: nameFocusNode,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF2A2A2A),
+                        ),
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(vertical: 4),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 8),
+
+                    // Group Selection
+                    GestureDetector(
+                      onTap: () {
+                        _showGroupSelectionDialog(context, controller);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: const Color(0xFFDEDEDE)),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                         child: Row(
-                          children: const [
-                            Text(
-                              '이름 / 애칭',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF999999),
-                              ),
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              '(필수)',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w300,
-                                color: Color(0xFF999999),
-                              ),
+                          children: [
+                            Obx(() {
+                              final groupId = controller.selectedGroupId.value;
+                              final group = controller.groups.firstWhereOrNull(
+                                (g) => g.id == groupId,
+                              );
+                              return Text(
+                                group?.name ?? '선택',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: group != null
+                                      ? const Color(0xFF2A2A2A)
+                                      : const Color(0xFFCCCCCC),
+                                ),
+                              );
+                            }),
+                            const SizedBox(width: 2),
+                            const Icon(
+                              Icons.arrow_drop_down,
+                              size: 18,
+                              color: Color(0xFF999999),
                             ),
                           ],
                         ),
                       ),
-                      // Group Selection
-                      GestureDetector(
-                        onTap: () {
-                          _showGroupSelectionDialog(context, controller);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: const Color(0xFFDEDEDE)),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            children: [
-                              Obx(() {
-                                final groupId =
-                                    controller.selectedGroupId.value;
-                                final group = controller.groups
-                                    .firstWhereOrNull((g) => g.id == groupId);
-                                return Text(
-                                  group?.name ?? '선택',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: group != null
-                                        ? const Color(0xFF2A2A2A)
-                                        : const Color(0xFFCCCCCC),
-                                  ),
-                                );
-                              }),
-                              const SizedBox(width: 4),
-                              const Icon(
-                                Icons.arrow_drop_down,
-                                size: 18,
-                                color: Color(0xFF999999),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  CustomInputField(
-                    controller: controller.nameController,
-                    hint: '이름 또는 애칭을 입력해주세요',
-                    focusNode: nameFocusNode,
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 30),
 
