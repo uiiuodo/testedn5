@@ -13,6 +13,7 @@ class CustomInputField extends StatelessWidget {
   final Widget? suffixIcon;
   final bool readOnly;
   final VoidCallback? onTap;
+  final FocusNode? focusNode;
 
   const CustomInputField({
     super.key,
@@ -26,6 +27,7 @@ class CustomInputField extends StatelessWidget {
     this.suffixIcon,
     this.readOnly = false,
     this.onTap,
+    this.focusNode,
   });
 
   @override
@@ -42,6 +44,7 @@ class CustomInputField extends StatelessWidget {
         ],
         TextField(
           controller: controller,
+          focusNode: focusNode,
           onChanged: onChanged,
           keyboardType: keyboardType,
           maxLines: maxLines,
