@@ -354,7 +354,7 @@ class PersonEditScreen extends StatelessWidget {
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
-                        vertical: 10,
+                        vertical: 6, // Reduced padding
                       ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF5F5F5),
@@ -529,7 +529,7 @@ class PersonEditScreen extends StatelessWidget {
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
-                        vertical: 8,
+                        vertical: 6, // Reduced padding
                       ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF5F5F5),
