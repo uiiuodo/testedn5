@@ -1,8 +1,10 @@
 import 'package:get/get.dart';
 import '../../../../data/model/schedule.dart';
 import '../../../../data/model/group.dart';
+import '../../../../data/model/person.dart';
 import '../../../../data/repository/group_repository.dart';
 import '../../../../data/repository/schedule_repository.dart';
+import '../../../../data/repository/person_repository.dart';
 import '../home/home_controller.dart';
 
 class GroupCalendarController extends GetxController {
@@ -16,17 +18,26 @@ class GroupCalendarController extends GetxController {
   // Schedules - Unified List
   final RxList<Schedule> schedules = <Schedule>[].obs;
 
+  // People - For Birthdays
+  final RxList<Person> people = <Person>[].obs;
+
   final GroupRepository _groupRepository = GroupRepository();
   final ScheduleRepository _scheduleRepository = ScheduleRepository();
+  final PersonRepository _personRepository = PersonRepository();
 
   @override
   void onInit() {
     super.onInit();
     fetchSchedules();
+    fetchPeople();
   }
 
   void fetchSchedules() {
     schedules.value = _scheduleRepository.getSchedules();
+  }
+
+  void fetchPeople() {
+    people.value = _personRepository.getPeople();
   }
 
   // Filter Logic
@@ -62,8 +73,9 @@ class GroupCalendarController extends GetxController {
   }
 
   List<String> getEventsForDay(DateTime day) {
-    // Use filtered schedules (all schedules for the selected group)
-    // We use filteredCalendarSchedules which includes everything for the group.
+    final List<String> events = [];
+
+    // 1. Add Schedule Events
     final eventsForDay = filteredCalendarSchedules.where((s) {
       // Check for multi-day overlap
       if (s.allDay || !isSameDay(s.startDateTime, s.endDateTime)) {
@@ -84,7 +96,31 @@ class GroupCalendarController extends GetxController {
       return isSameDay(s.startDateTime, day);
     }).toList();
 
-    return eventsForDay.map((s) => s.title).toList();
+    events.addAll(eventsForDay.map((s) => s.title));
+
+    // 2. Add Birthday Events
+    final filteredPeople = selectedGroupId.value == 'all'
+        ? people
+        : people.where((p) => p.groupId == selectedGroupId.value).toList();
+
+    for (final person in filteredPeople) {
+      if (person.birthDate != null) {
+        final birthDate = person.birthDate!;
+        if (birthDate.month == day.month && birthDate.day == day.day) {
+          events.add('🎂 ${person.name}');
+        }
+      }
+
+      // 3. Add Anniversary Events
+      for (final anniversary in person.anniversaries) {
+        if (anniversary.date.month == day.month &&
+            anniversary.date.day == day.day) {
+          events.add('🎉 ${anniversary.title}');
+        }
+      }
+    }
+
+    return events;
   }
 
   bool isSameDay(DateTime? a, DateTime? b) {
