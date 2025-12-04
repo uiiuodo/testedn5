@@ -1,0 +1,361 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import '../calendar/person_calendar/person_calendar_screen.dart';
+import '../calendar/person_calendar/person_calendar_controller.dart';
+import '../../../data/model/anniversary.dart';
+import '../../../data/model/memo.dart';
+import '../../../data/model/preference_category.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_text_styles.dart';
+import '../../widgets/common/custom_app_bar.dart';
+import 'person_detail_controller.dart';
+import 'person_edit_screen.dart';
+
+class PersonDetailScreen extends StatefulWidget {
+  final String personId;
+
+  const PersonDetailScreen({super.key, required this.personId});
+
+  @override
+  State<PersonDetailScreen> createState() => _PersonDetailScreenState();
+}
+
+class _PersonDetailScreenState extends State<PersonDetailScreen> {
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.put(
+      PersonDetailController(widget.personId),
+      tag: widget.personId,
+    );
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: CustomAppBar(
+        title: '',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, color: AppColors.primary),
+            onPressed: () async {
+              // Navigate to Edit Screen with personId
+              await Get.to(() => PersonEditScreen(personId: widget.personId));
+              // Refresh data on return
+              controller.loadPerson();
+            },
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Obx(() {
+          final person = controller.person.value;
+          if (person == null)
+            return const Center(child: CircularProgressIndicator());
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 1. Basic Info
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: const Color(0xFFDEDEDE)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            person.name,
+                            style: AppTextStyles.header2.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      _buildInfoRow(
+                        '생년월일',
+                        person.birthDate != null
+                            ? DateFormat('yyyy.MM.dd').format(person.birthDate!)
+                            : '-',
+                      ),
+                      _buildInfoRow('전화번호', person.phone ?? '-'),
+                      _buildInfoRow('주소', person.address ?? '-'),
+                      _buildInfoRow('e-mail', person.email ?? '-'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 30),
+
+                // 2. Anniversaries
+                _buildSectionHeader('기념일'),
+                const SizedBox(height: 10),
+                Column(
+                  children: person.anniversaries
+                      .map((anniv) => _buildAnniversaryCard(anniv))
+                      .toList(),
+                ),
+                const SizedBox(height: 30),
+
+                // 3. Memos
+                _buildSectionHeader('메모'),
+                const SizedBox(height: 10),
+                Column(
+                  children: person.memos
+                      .map((memo) => _buildMemoCard(memo))
+                      .toList(),
+                ),
+                const SizedBox(height: 30),
+
+                // 4. Preferences
+                _buildSectionHeader('취향 기록'),
+                const SizedBox(height: 10),
+                Column(
+                  children: person.preferences
+                      .map((pref) => _buildPreferenceAccordion(pref))
+                      .toList(),
+                ),
+                const SizedBox(height: 40),
+
+                // 6. Bottom Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Get.to(
+                        () => const PersonCalendarScreen(),
+                        binding: BindingsBuilder(() {
+                          Get.put(
+                            PersonCalendarController(personId: widget.personId),
+                          );
+                        }),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      '이 사람과의 개인 캘린더로 이동',
+                      style: AppTextStyles.button.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Row(
+      children: [
+        Container(width: 9, height: 9, color: const Color(0xFFB0B0B0)),
+        const SizedBox(width: 6),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF9D9D9D),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 60,
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 10, color: Color(0xFF919191)),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 12, color: Color(0xFF4A4A4A)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnniversaryCard(Anniversary anniv) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F5F5),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            anniv.title,
+            style: const TextStyle(fontSize: 13, color: Color(0xFF2A2A2A)),
+          ),
+          Text(
+            DateFormat('yyyy.MM.dd').format(anniv.date),
+            style: const TextStyle(fontSize: 13, color: Color(0xFF2A2A2A)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMemoCard(Memo memo) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F5F5),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Text(
+        memo.content,
+        style: const TextStyle(
+          fontSize: 12,
+          color: Color(0xFF2A2A2A),
+          height: 1.4,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPreferenceAccordion(PreferenceCategory preference) {
+    return _PreferenceAccordion(preference: preference);
+  }
+}
+
+class _PreferenceAccordion extends StatefulWidget {
+  final PreferenceCategory preference;
+
+  const _PreferenceAccordion({required this.preference});
+
+  @override
+  State<_PreferenceAccordion> createState() => _PreferenceAccordionState();
+}
+
+class _PreferenceAccordionState extends State<_PreferenceAccordion> {
+  bool isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              isExpanded = !isExpanded;
+            });
+          },
+          child: Container(
+            color: Colors.transparent, // Hit test
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.preference.title,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF404040),
+                    ),
+                  ),
+                ),
+                Icon(
+                  isExpanded
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down,
+                  size: 20,
+                  color: const Color(0xFFB0B0B0),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (isExpanded) ...[
+          const SizedBox(height: 8),
+          if (widget.preference.like != null &&
+              widget.preference.like!.isNotEmpty)
+            _buildDetailBox(
+              '선호',
+              widget.preference.like!,
+              const Color(0xFF00A6FF),
+            ),
+          const SizedBox(height: 8),
+          if (widget.preference.dislike != null &&
+              widget.preference.dislike!.isNotEmpty)
+            _buildDetailBox(
+              '비선호',
+              widget.preference.dislike!,
+              const Color(0xFF979797),
+            ),
+          const SizedBox(height: 16),
+        ],
+        const Divider(height: 1, color: Color(0xFFEEEEEE)),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  Widget _buildDetailBox(String label, String content, Color color) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(5),
+        border: Border.all(color: color.withOpacity(0.5), width: 0.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 9,
+              color: color,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            content,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF464646),
+              height: 1.4,
+              fontWeight: FontWeight.w300,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
