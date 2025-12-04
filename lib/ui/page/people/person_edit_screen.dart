@@ -42,101 +42,87 @@ class PersonEditScreen extends StatelessWidget {
             children: [
               // 1. Name / Nickname & Group Selection
               // 1. Name / Nickname & Group Selection (Inline Row)
-              GestureDetector(
-                onTap: () {
-                  FocusScope.of(context).requestFocus(nameFocusNode);
-                },
-                behavior: HitTestBehavior.opaque,
-                child: Row(
-                  children: [
-                    // Label
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: const [
-                        Text(
-                          '이름 / 애칭',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF999999),
-                          ),
-                        ),
-                        SizedBox(width: 4),
-                        Text(
-                          '(필수)',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w300,
-                            color: Color(0xFF999999),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(width: 16),
-
-                    // Inline Input
-                    Expanded(
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Inline Input with Hint
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        FocusScope.of(context).requestFocus(nameFocusNode);
+                      },
+                      behavior: HitTestBehavior.opaque,
                       child: TextField(
                         controller: controller.nameController,
                         focusNode: nameFocusNode,
                         style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
                           color: Color(0xFF2A2A2A),
                         ),
                         decoration: const InputDecoration(
+                          hintText: '이름 / 애칭 (필수)',
+                          hintStyle: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF999999),
+                          ),
                           border: InputBorder.none,
-                          isDense: true,
-                          contentPadding: EdgeInsets.symmetric(vertical: 4),
+                          focusedBorder: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          errorBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          contentPadding: EdgeInsets.zero,
+                          isCollapsed: true,
                         ),
                       ),
                     ),
+                  ),
 
-                    const SizedBox(width: 8),
+                  const SizedBox(width: 8),
 
-                    // Group Selection
-                    GestureDetector(
-                      onTap: () {
-                        _showGroupSelectionDialog(context, controller);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: const Color(0xFFDEDEDE)),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          children: [
-                            Obx(() {
-                              final groupId = controller.selectedGroupId.value;
-                              final group = controller.groups.firstWhereOrNull(
-                                (g) => g.id == groupId,
-                              );
-                              return Text(
-                                group?.name ?? '선택',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: group != null
-                                      ? const Color(0xFF2A2A2A)
-                                      : const Color(0xFFCCCCCC),
-                                ),
-                              );
-                            }),
-                            const SizedBox(width: 2),
-                            const Icon(
-                              Icons.arrow_drop_down,
-                              size: 18,
-                              color: Color(0xFF999999),
-                            ),
-                          ],
-                        ),
+                  // Group Selection
+                  GestureDetector(
+                    onTap: () {
+                      _showGroupSelectionDialog(context, controller);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: const Color(0xFFDEDEDE)),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        children: [
+                          Obx(() {
+                            final groupId = controller.selectedGroupId.value;
+                            final group = controller.groups.firstWhereOrNull(
+                              (g) => g.id == groupId,
+                            );
+                            return Text(
+                              group?.name ?? '선택',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: group != null
+                                    ? const Color(0xFF2A2A2A)
+                                    : const Color(0xFFCCCCCC),
+                              ),
+                            );
+                          }),
+                          const SizedBox(width: 2),
+                          const Icon(
+                            Icons.arrow_drop_down,
+                            size: 18,
+                            color: Color(0xFF999999),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
               const SizedBox(height: 30),
 
