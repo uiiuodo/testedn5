@@ -126,11 +126,14 @@ class _PeopleListScreenState extends State<PeopleListScreen> {
                 const SizedBox(height: 12),
 
                 // Group Legend
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Obx(() {
-                    return Row(
+                Obx(() {
+                  if (controller.selectedGroupId.value != 'all') {
+                    return const SizedBox.shrink();
+                  }
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
                       children: controller.groups.map((group) {
                         return Padding(
                           padding: const EdgeInsets.only(right: 16),
@@ -156,9 +159,9 @@ class _PeopleListScreenState extends State<PeopleListScreen> {
                           ),
                         );
                       }).toList(),
-                    );
-                  }),
-                ),
+                    ),
+                  );
+                }),
                 const SizedBox(height: 16),
 
                 // Search Bar

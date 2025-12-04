@@ -160,10 +160,13 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                       const SizedBox(height: 12),
 
                       // Row 3: Group Legend
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Obx(() {
-                          return Row(
+                      Obx(() {
+                        if (controller.selectedGroupId.value != 'all') {
+                          return const SizedBox.shrink();
+                        }
+                        return SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
                             children: homeController.groups.map((group) {
                               return Padding(
                                 padding: const EdgeInsets.only(right: 12),
@@ -189,9 +192,9 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                                 ),
                               );
                             }).toList(),
-                          );
-                        }),
-                      ),
+                          ),
+                        );
+                      }),
                     ],
                   ),
                 ),
