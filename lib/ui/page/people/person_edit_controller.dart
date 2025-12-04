@@ -50,16 +50,29 @@ class PersonEditController extends GetxController {
     fetchGroups();
     if (personId != null) {
       loadPerson(personId!);
-    } else {
-      // Default group
-      if (groups.isNotEmpty) {
-        selectedGroupId.value = groups.first.id;
-      }
     }
   }
 
   void fetchGroups() {
     groups.value = _groupRepository.getGroups();
+  }
+
+  void addNewGroup(String name) async {
+    // Generate a random color for the new group
+    // Simple random color generation for now
+    final int colorValue =
+        (0xFF000000 + (DateTime.now().millisecondsSinceEpoch & 0xFFFFFF)) |
+        0xFF000000;
+
+    final newGroup = Group(
+      id: const Uuid().v4(),
+      name: name,
+      colorValue: colorValue,
+    );
+
+    await _groupRepository.addGroup(newGroup);
+    fetchGroups();
+    selectedGroupId.value = newGroup.id;
   }
 
   void loadPerson(String id) {

@@ -102,13 +102,18 @@ class PersonEditScreen extends StatelessWidget {
                             final group = controller.groups.firstWhereOrNull(
                               (g) => g.id == groupId,
                             );
+
+                            final isPlaceholder = group == null;
+
                             return Text(
-                              group?.name ?? '선택',
+                              group?.name ?? '그룹 설정',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: group != null
-                                    ? const Color(0xFF2A2A2A)
-                                    : const Color(0xFFCCCCCC),
+                                color: isPlaceholder
+                                    ? const Color(
+                                        0xFFCCCCCC,
+                                      ) // Placeholder color
+                                    : const Color(0xFF2A2A2A), // Selected color
                               ),
                             );
                           }),
@@ -895,29 +900,76 @@ class PersonEditScreen extends StatelessWidget {
         title: const Text('그룹 선택'),
         content: SizedBox(
           width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: controller.groups.length,
-            itemBuilder: (context, index) {
-              final group = controller.groups[index];
-              return ListTile(
-                leading: Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: Color(group.colorValue),
-                    shape: BoxShape.circle,
+          child: Obx(
+            () => ListView.builder(
+              shrinkWrap: true,
+              itemCount: controller.groups.length + 1,
+              itemBuilder: (context, index) {
+                if (index == controller.groups.length) {
+                  // Add Group Option
+                  return ListTile(
+                    leading: const Icon(Icons.add, color: Color(0xFF999999)),
+                    title: const Text(
+                      '그룹 추가하기',
+                      style: TextStyle(color: Color(0xFF999999)),
+                    ),
+                    onTap: () {
+                      Get.back();
+                      _showAddGroupDialog(context, controller);
+                    },
+                  );
+                }
+
+                final group = controller.groups[index];
+                return ListTile(
+                  leading: Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: Color(group.colorValue),
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                ),
-                title: Text(group.name),
-                onTap: () {
-                  controller.selectedGroupId.value = group.id;
-                  Get.back();
-                },
-              );
-            },
+                  title: Text(group.name),
+                  onTap: () {
+                    controller.selectedGroupId.value = group.id;
+                    Get.back();
+                  },
+                );
+              },
+            ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _showAddGroupDialog(
+    BuildContext context,
+    PersonEditController controller,
+  ) {
+    final textController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('새 그룹 추가'),
+        content: TextField(
+          controller: textController,
+          decoration: const InputDecoration(hintText: '그룹 이름', isDense: true),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('취소')),
+          TextButton(
+            onPressed: () {
+              if (textController.text.isNotEmpty) {
+                controller.addNewGroup(textController.text);
+                Get.back();
+              }
+            },
+            child: const Text('추가'),
+          ),
+        ],
       ),
     );
   }
