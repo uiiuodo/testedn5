@@ -204,70 +204,81 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                   child: SingleChildScrollView(
                     child: Column(
                       children: [
-                        Obx(
-                          () => TableCalendar(
-                            firstDay: DateTime.utc(2020, 1, 1),
-                            lastDay: DateTime.utc(2030, 12, 31),
-                            focusedDay: controller.focusedDay.value,
-                            calendarFormat: CalendarFormat.month,
-                            headerVisible: false,
-                            selectedDayPredicate: (day) {
-                              return isSameDay(
-                                controller.selectedDay.value,
-                                day,
-                              );
-                            },
-                            onDaySelected: (selectedDay, focusedDay) {
-                              controller.selectedDay.value = selectedDay;
-                              controller.focusedDay.value = focusedDay;
-                            },
-                            onPageChanged: (focusedDay) {
-                              controller.focusedDay.value = focusedDay;
-                            },
-                            eventLoader: controller.getEventsForDay,
-                            daysOfWeekHeight: 20,
-                            rowHeight: 70,
-                            daysOfWeekStyle: const DaysOfWeekStyle(
-                              decoration: BoxDecoration(color: Colors.white),
-                            ),
-                            calendarBuilders: CalendarBuilders(
-                              dowBuilder: (context, day) {
-                                final text = DateFormat.E().format(day);
-                                Color color = const Color(0xFF4A4A4A);
-                                if (day.weekday == DateTime.sunday) {
-                                  color = const Color(0xFFFF0000);
-                                }
-                                if (day.weekday == DateTime.saturday) {
-                                  color = const Color(0xFF0084FF);
-                                }
-                                return Center(
-                                  child: Text(
-                                    text,
-                                    style: TextStyle(
-                                      color: color,
-                                      fontSize: 8,
-                                      fontWeight: FontWeight.w300,
-                                    ),
-                                  ),
-                                );
-                              },
-                              defaultBuilder: (context, day, focusedDay) {
-                                return _buildDayCell(controller, day, false);
-                              },
-                              selectedBuilder: (context, day, focusedDay) {
-                                return _buildDayCell(controller, day, true);
-                              },
-                              todayBuilder: (context, day, focusedDay) {
-                                return _buildDayCell(
-                                  controller,
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Obx(
+                            () => TableCalendar(
+                              firstDay: DateTime.utc(2020, 1, 1),
+                              lastDay: DateTime.utc(2030, 12, 31),
+                              focusedDay: controller.focusedDay.value,
+                              calendarFormat: CalendarFormat.month,
+                              headerVisible: false,
+                              selectedDayPredicate: (day) {
+                                return isSameDay(
+                                  controller.selectedDay.value,
                                   day,
-                                  false,
-                                  isToday: true,
                                 );
                               },
-                              markerBuilder: (context, day, events) {
-                                return const SizedBox.shrink(); // Hide default markers
+                              onDaySelected: (selectedDay, focusedDay) {
+                                controller.selectedDay.value = selectedDay;
+                                controller.focusedDay.value = focusedDay;
                               },
+                              onPageChanged: (focusedDay) {
+                                controller.focusedDay.value = focusedDay;
+                              },
+                              eventLoader: controller.getEventsForDay,
+                              daysOfWeekHeight: 20,
+                              rowHeight: 70,
+                              daysOfWeekStyle: const DaysOfWeekStyle(
+                                decoration: BoxDecoration(color: Colors.white),
+                              ),
+                              calendarBuilders: CalendarBuilders(
+                                dowBuilder: (context, day) {
+                                  final text = DateFormat.E().format(day);
+                                  Color color = const Color(0xFF4A4A4A);
+                                  if (day.weekday == DateTime.sunday) {
+                                    color = const Color(0xFFFF0000);
+                                  }
+                                  if (day.weekday == DateTime.saturday) {
+                                    color = const Color(0xFF0084FF);
+                                  }
+                                  return Center(
+                                    child: Text(
+                                      text,
+                                      style: TextStyle(
+                                        color: color,
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.w300,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                defaultBuilder: (context, day, focusedDay) {
+                                  return _buildDayCell(controller, day, false);
+                                },
+                                selectedBuilder: (context, day, focusedDay) {
+                                  return _buildDayCell(controller, day, true);
+                                },
+                                todayBuilder: (context, day, focusedDay) {
+                                  return _buildDayCell(
+                                    controller,
+                                    day,
+                                    false,
+                                    isToday: true,
+                                  );
+                                },
+                                outsideBuilder: (context, day, focusedDay) {
+                                  return _buildDayCell(
+                                    controller,
+                                    day,
+                                    false,
+                                    isOutside: true,
+                                  );
+                                },
+                                markerBuilder: (context, day, events) {
+                                  return const SizedBox.shrink(); // Hide default markers
+                                },
+                              ),
                             ),
                           ),
                         ),
@@ -687,6 +698,7 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
     DateTime day,
     bool isSelected, {
     bool isToday = false,
+    bool isOutside = false,
   }) {
     final events = controller.getEventsForDay(day);
     final hasEvents = events.isNotEmpty;
@@ -726,13 +738,15 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w300,
-              color: isToday
-                  ? Colors.blue
-                  : (day.weekday == DateTime.sunday
-                        ? Colors.red
-                        : (day.weekday == DateTime.saturday
-                              ? Colors.blue
-                              : Colors.black)),
+              color: isOutside
+                  ? const Color(0xFFD9D9D9) // Gray for outside days
+                  : (isToday
+                        ? Colors.blue
+                        : (day.weekday == DateTime.sunday
+                              ? Colors.red
+                              : (day.weekday == DateTime.saturday
+                                    ? Colors.blue
+                                    : Colors.black))),
             ),
           ),
           const SizedBox(height: 4),
