@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import '../../../data/model/preference_category.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/common/custom_app_bar.dart';
@@ -711,73 +712,132 @@ class PersonEditScreen extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               // Existing Preferences
-              Obx(
-                () => Column(
-                  children: controller.preferences.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final pref = entry.value;
+              Obx(() {
+                // Group preferences by category
+                final grouped = <String, List<PreferenceCategory>>{};
+                for (var p in controller.preferences) {
+                  if (!grouped.containsKey(p.title)) grouped[p.title] = [];
+                  grouped[p.title]!.add(p);
+                }
+
+                return Column(
+                  children: grouped.entries.map((entry) {
+                    final category = entry.key;
+                    final prefs = entry.value;
+                    final likes = prefs.where((p) => p.like != null).toList();
+                    final dislikes = prefs
+                        .where((p) => p.dislike != null)
+                        .toList();
+
                     return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
+                      margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(5),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: RichText(
-                              text: TextSpan(
+                      child: Theme(
+                        data: Theme.of(
+                          context,
+                        ).copyWith(dividerColor: Colors.transparent),
+                        child: ExpansionTile(
+                          title: Row(
+                            children: [
+                              Text(
+                                category,
                                 style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF2A2A2A),
-                                  height: 1.4,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
                                 ),
-                                children: [
-                                  TextSpan(
-                                    text: '${pref.title} ',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  TextSpan(
-                                    text: pref.like != null
-                                        ? '- 선호 : '
-                                        : '- 비선호 : ',
-                                    style: TextStyle(
-                                      color: pref.like != null
-                                          ? AppColors.primary
-                                          : const Color(0xFFFF5252),
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  TextSpan(
-                                    text: pref.like ?? pref.dislike ?? '',
-                                  ),
-                                ],
                               ),
-                            ),
+                            ],
                           ),
-                          GestureDetector(
-                            onTap: () {
-                              controller.removePreference(index);
-                            },
-                            child: const Icon(
-                              Icons.close,
-                              size: 16,
-                              color: Color(0xFF9D9D9D),
-                            ),
-                          ),
-                        ],
+                          initiallyExpanded: true,
+                          tilePadding: EdgeInsets.zero,
+                          childrenPadding: const EdgeInsets.only(bottom: 16),
+                          children: [
+                            if (likes.isNotEmpty) ...[
+                              Container(
+                                width: double.infinity,
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: const Color(0xFF2F80ED), // Blue
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      '선호',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF2F80ED),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      likes.map((p) => p.like!).join(', '),
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: AppColors.textPrimary,
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            if (dislikes.isNotEmpty) ...[
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: const Color(0xFF333333), // Dark Gray
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      '비선호',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF333333),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      dislikes
+                                          .map((p) => p.dislike!)
+                                          .join(', '),
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: AppColors.textPrimary,
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
                     );
                   }).toList(),
-                ),
-              ),
+                );
+              }),
               const SizedBox(height: 16),
 
               // Add Preference Button
