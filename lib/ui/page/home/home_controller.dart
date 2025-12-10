@@ -57,11 +57,11 @@ class HomeController extends GetxController {
     _loadPersonOrder();
   }
 
-  void fetchGroups() {
+  Future<void> fetchGroups() async {
     groups.value = _groupRepository.getGroups();
   }
 
-  void fetchPeople() {
+  Future<void> fetchPeople() async {
     people.value = _personRepository.getPeople();
     _sortPeople();
   }

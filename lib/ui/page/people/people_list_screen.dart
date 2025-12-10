@@ -7,6 +7,7 @@ import 'person_edit_screen.dart';
 import 'person_detail_screen.dart';
 import 'dart:ui';
 import '../notification/notification_center_screen.dart';
+import '../../widgets/common/refreshable_layout.dart';
 
 class PeopleListScreen extends StatefulWidget {
   const PeopleListScreen({super.key});
@@ -211,124 +212,131 @@ class _PeopleListScreenState extends State<PeopleListScreen> {
                       );
                     }
 
-                    return ReorderableListView.builder(
-                      padding: const EdgeInsets.only(bottom: 80),
-                      itemCount: people.length,
-                      proxyDecorator: (child, index, animation) {
-                        return AnimatedBuilder(
-                          animation: animation,
-                          builder: (BuildContext context, Widget? child) {
-                            final double animValue = Curves.easeInOut.transform(
-                              animation.value,
-                            );
-                            final double elevation = lerpDouble(
-                              0,
-                              6,
-                              animValue,
-                            )!;
-                            return Material(
-                              elevation: elevation,
-                              color: Colors.white,
-                              shadowColor: Colors.black.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
-                              child: child,
-                            );
-                          },
-                          child: child,
-                        );
+                    return RefreshableLayout(
+                      onRefresh: () async {
+                        await controller.fetchPeople();
+                        await controller.fetchGroups();
                       },
-                      onReorder: (oldIndex, newIndex) {
-                        controller.reorderPeople(oldIndex, newIndex);
-                      },
-                      itemBuilder: (context, index) {
-                        final person = people[index];
-                        final group = controller.groups.firstWhereOrNull(
-                          (g) => g.id == person.groupId,
-                        );
-                        final color = group != null
-                            ? Color(group.colorValue)
-                            : Colors.grey;
+                      child: ReorderableListView.builder(
+                        padding: const EdgeInsets.only(bottom: 80),
+                        itemCount: people.length,
+                        proxyDecorator: (child, index, animation) {
+                          return AnimatedBuilder(
+                            animation: animation,
+                            builder: (BuildContext context, Widget? child) {
+                              final double animValue = Curves.easeInOut
+                                  .transform(animation.value);
+                              final double elevation = lerpDouble(
+                                0,
+                                6,
+                                animValue,
+                              )!;
+                              return Material(
+                                elevation: elevation,
+                                color: Colors.white,
+                                shadowColor: Colors.black.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                                child: child,
+                              );
+                            },
+                            child: child,
+                          );
+                        },
+                        onReorder: (oldIndex, newIndex) {
+                          controller.reorderPeople(oldIndex, newIndex);
+                        },
+                        itemBuilder: (context, index) {
+                          final person = people[index];
+                          final group = controller.groups.firstWhereOrNull(
+                            (g) => g.id == person.groupId,
+                          );
+                          final color = group != null
+                              ? Color(group.colorValue)
+                              : Colors.grey;
 
-                        return Container(
-                          key: ValueKey(person.id),
-                          color: Colors.white, // Background for drag proxy
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              ReorderableDelayedDragStartListener(
-                                index: index,
-                                child: InkWell(
-                                  onTap: () {
-                                    Get.to(
-                                      () => PersonDetailScreen(
-                                        personId: person.id,
+                          return Container(
+                            key: ValueKey(person.id),
+                            color: Colors.white, // Background for drag proxy
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ReorderableDelayedDragStartListener(
+                                  index: index,
+                                  child: InkWell(
+                                    onTap: () {
+                                      Get.to(
+                                        () => PersonDetailScreen(
+                                          personId: person.id,
+                                        ),
+                                      )?.then((_) {
+                                        controller.fetchPeople();
+                                        controller.fetchGroups();
+                                      });
+                                    },
+                                    child: Container(
+                                      height: 56,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
                                       ),
-                                    );
-                                  },
-                                  child: Container(
-                                    height: 56,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                    ),
-                                    alignment: Alignment.centerLeft,
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          width: 11,
-                                          height: 11,
-                                          decoration: BoxDecoration(
-                                            color: color,
-                                            shape: BoxShape.circle,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black.withOpacity(
-                                                  0.15,
+                                      alignment: Alignment.centerLeft,
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            width: 11,
+                                            height: 11,
+                                            decoration: BoxDecoration(
+                                              color: color,
+                                              shape: BoxShape.circle,
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(0.15),
+                                                  offset: const Offset(1, 1),
+                                                  blurRadius: 3,
                                                 ),
-                                                offset: const Offset(1, 1),
-                                                blurRadius: 3,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(width: 28),
-                                        Expanded(
-                                          child: Text(
-                                            person.name,
-                                            style: AppTextStyles.header2
-                                                .copyWith(
-                                                  fontWeight: FontWeight.w500,
-                                                  color: AppColors.primary,
-                                                ),
-                                          ),
-                                        ),
-                                        // Drag Handle
-                                        ReorderableDragStartListener(
-                                          index: index,
-                                          child: const Padding(
-                                            padding: EdgeInsets.all(8.0),
-                                            child: Icon(
-                                              Icons.menu, // Hamburger icon
-                                              color: AppColors.textTertiary,
-                                              size: 20,
+                                              ],
                                             ),
                                           ),
-                                        ),
-                                      ],
+                                          const SizedBox(width: 28),
+                                          Expanded(
+                                            child: Text(
+                                              person.name,
+                                              style: AppTextStyles.header2
+                                                  .copyWith(
+                                                    fontWeight: FontWeight.w500,
+                                                    color: AppColors.primary,
+                                                  ),
+                                            ),
+                                          ),
+                                          // Drag Handle
+                                          ReorderableDragStartListener(
+                                            index: index,
+                                            child: const Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Icon(
+                                                Icons.menu, // Hamburger icon
+                                                color: AppColors.textTertiary,
+                                                size: 20,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                              // Divider (Custom implementation since ReorderableListView has no separator)
-                              if (index < people.length - 1)
-                                const Divider(
-                                  height: 1,
-                                  color: Color(0xFFEBEBEB),
-                                  thickness: 1,
-                                ),
-                            ],
-                          ),
-                        );
-                      },
+                                // Divider (Custom implementation since ReorderableListView has no separator)
+                                if (index < people.length - 1)
+                                  const Divider(
+                                    height: 1,
+                                    color: Color(0xFFEBEBEB),
+                                    thickness: 1,
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     );
                   }),
                 ),
@@ -344,7 +352,10 @@ class _PeopleListScreenState extends State<PeopleListScreen> {
                 height: 60,
                 child: FloatingActionButton(
                   onPressed: () {
-                    Get.to(() => const PersonEditScreen());
+                    Get.to(() => const PersonEditScreen())?.then((_) {
+                      controller.fetchPeople();
+                      controller.fetchGroups();
+                    });
                   },
                   backgroundColor: AppColors.primary,
                   elevation: 0,

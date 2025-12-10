@@ -16,7 +16,7 @@ class PersonDetailController extends GetxController {
     loadPerson();
   }
 
-  void loadPerson() {
+  Future<void> loadPerson() async {
     person.value = _personRepository.getPerson(personId);
   }
 }

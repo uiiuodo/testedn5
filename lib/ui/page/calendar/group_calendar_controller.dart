@@ -32,7 +32,7 @@ class GroupCalendarController extends GetxController {
     fetchPeople();
   }
 
-  void fetchSchedules() {
+  Future<void> fetchSchedules() async {
     schedules.value = _scheduleRepository.getSchedules();
   }
 
