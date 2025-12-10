@@ -171,11 +171,29 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
 
   String _buildBirthdayText(Person person, PersonDetailController controller) {
     if (person.birthDate == null) return '-';
+
+    // Calculate International Age (Man Age)
+    final age = _calculateInternationalAge(person.birthDate);
+    final ageText = age != null ? ' (만 ${age}세)' : '';
+
     if (controller.isLunarBirth.value &&
         controller.lunarBirthDate.value != null) {
-      return '음력 ${DateFormat('yyyy.MM.dd').format(controller.lunarBirthDate.value!)}';
+      return '음력 ${DateFormat('yyyy.MM.dd').format(controller.lunarBirthDate.value!)}$ageText';
     }
-    return DateFormat('yyyy.MM.dd').format(person.birthDate!);
+    return '${DateFormat('yyyy.MM.dd').format(person.birthDate!)}$ageText';
+  }
+
+  int? _calculateInternationalAge(DateTime? birthDate) {
+    if (birthDate == null) return null;
+
+    final now = DateTime.now();
+    int age = now.year - birthDate.year;
+
+    if (now.month < birthDate.month ||
+        (now.month == birthDate.month && now.day < birthDate.day)) {
+      age--;
+    }
+    return age;
   }
 
   Widget _buildSectionHeader(String title) {
