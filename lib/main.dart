@@ -4,10 +4,14 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'service/data_service.dart';
 import 'ui/page/splash/splash_page.dart';
 import 'ui/theme/app_theme.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting();
+  // 🔥 Firebase 초기화
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Initialize Hive and DataService
   await Get.putAsync(() => DataService().init());
