@@ -71,6 +71,11 @@ class HomeController extends GetxController {
     }
   }
 
+  Future<void> deletePerson(String id) async {
+    await _personRepository.deletePerson(id);
+    fetchPeople();
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -80,7 +85,9 @@ class HomeController extends GetxController {
   }
 
   Future<void> fetchGroups() async {
-    groups.value = _groupRepository.getGroups();
+    final loadedGroups = _groupRepository.getGroups();
+    loadedGroups.sort((a, b) => a.name.compareTo(b.name));
+    groups.value = loadedGroups;
   }
 
   Future<void> fetchPeople() async {
@@ -107,7 +114,10 @@ class HomeController extends GetxController {
   }
 
   void _sortPeople() {
-    if (_personOrder.isEmpty) return;
+    if (_personOrder.isEmpty) {
+      people.sort((a, b) => a.name.compareTo(b.name));
+      return;
+    }
 
     final orderMap = {
       for (var i = 0; i < _personOrder.length; i++) _personOrder[i]: i,
@@ -116,6 +126,10 @@ class HomeController extends GetxController {
     people.sort((a, b) {
       final indexA = orderMap[a.id] ?? 999999;
       final indexB = orderMap[b.id] ?? 999999;
+      // If both are new (999999), sort them alphabetically
+      if (indexA == 999999 && indexB == 999999) {
+        return a.name.compareTo(b.name);
+      }
       return indexA.compareTo(indexB);
     });
   }
@@ -132,6 +146,11 @@ class HomeController extends GetxController {
     // If we are filtered, reordering might be ambiguous.
     // Let's assume reordering is primarily for the "All" view or we map back to the global list.
     // For simplicity and robustness, let's operate on the displayed list IDs and update the global order.
+
+    // If this is the first reorder, initialize the order list with current alphabetical order
+    if (_personOrder.isEmpty) {
+      _personOrder.addAll(people.map((p) => p.id));
+    }
 
     final currentList = filteredPeople;
     final item = currentList.removeAt(oldIndex);

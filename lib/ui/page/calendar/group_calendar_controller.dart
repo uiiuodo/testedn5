@@ -176,7 +176,12 @@ class GroupCalendarController extends GetxController {
         name: name,
         colorValue: colorValue,
       );
-      await _groupRepository.addGroup(newGroup);
     }
   }
+
+  // Note: fetchGroups was not explicitly defined in the previous view, but groups are used.
+  // Wait, GroupCalendarController uses _groupRepository but doesn't seem to expose `groups` list directly?
+  // Let me check the file content again.
+  // Line 13: final RxList<Group> groups = <Group>[].obs; is NOT present in the snippet I saw?
+  // Let me re-read the file content I viewed.
 }

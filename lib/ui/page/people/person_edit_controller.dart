@@ -115,7 +115,9 @@ class PersonEditController extends GetxController {
   }
 
   void fetchGroups() {
-    groups.value = _groupRepository.getGroups();
+    final loadedGroups = _groupRepository.getGroups();
+    loadedGroups.sort((a, b) => a.name.compareTo(b.name));
+    groups.value = loadedGroups;
   }
 
   void addNewGroup(String name, int colorValue) async {

@@ -316,100 +316,154 @@ class _PeopleListScreenState extends State<PeopleListScreen> {
                               ? Color(group.colorValue)
                               : Colors.grey;
 
-                          return Container(
+                          return Dismissible(
                             key: ValueKey(person.id),
-                            color: Colors.white, // Background for drag proxy
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                GestureDetector(
-                                  onLongPress: () {
-                                    controller.isReorderMode.value = true;
-                                  },
-                                  child: InkWell(
-                                    onTap: () {
-                                      // If in reorder mode, maybe just exit mode?
-                                      // Or navigate? User said "existing behavior intact".
-                                      // Let's navigate and also turn off mode.
-                                      controller.isReorderMode.value = false;
-                                      Get.to(
-                                        () => PersonDetailScreen(
-                                          personId: person.id,
-                                        ),
-                                      )?.then((_) {
-                                        controller.fetchPeople();
-                                        controller.fetchGroups();
-                                      });
-                                    },
-                                    child: Container(
-                                      height: 56,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 20,
+                            direction: DismissDirection.endToStart,
+                            background: Container(
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.only(right: 20),
+                              color: Colors.red,
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Icon(Icons.delete, color: Colors.white),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    '삭제',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            confirmDismiss: (direction) async {
+                              return await showDialog<bool>(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    title: const Text('삭제 확인'),
+                                    content: Text('${person.name}님을 삭제하시겠습니까?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(false),
+                                        child: const Text('취소'),
                                       ),
-                                      alignment: Alignment.centerLeft,
-                                      child: Row(
-                                        children: [
-                                          Container(
-                                            width: 11,
-                                            height: 11,
-                                            decoration: BoxDecoration(
-                                              color: color,
-                                              shape: BoxShape.circle,
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.black
-                                                      .withOpacity(0.15),
-                                                  offset: const Offset(1, 1),
-                                                  blurRadius: 3,
-                                                ),
-                                              ],
-                                            ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(true),
+                                        child: const Text(
+                                          '삭제',
+                                          style: TextStyle(color: Colors.red),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                            onDismissed: (direction) {
+                              controller.deletePerson(person.id);
+                            },
+                            child: Container(
+                              color: Colors.white, // Background for drag proxy
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  GestureDetector(
+                                    onLongPress: () {
+                                      controller.isReorderMode.value = true;
+                                    },
+                                    child: InkWell(
+                                      onTap: () {
+                                        // If in reorder mode, maybe just exit mode?
+                                        // Or navigate? User said "existing behavior intact".
+                                        // Let's navigate and also turn off mode.
+                                        controller.isReorderMode.value = false;
+                                        Get.to(
+                                          () => PersonDetailScreen(
+                                            personId: person.id,
                                           ),
-                                          const SizedBox(width: 28),
-                                          Expanded(
-                                            child: Text(
-                                              person.name,
-                                              style: AppTextStyles.header2
-                                                  .copyWith(
-                                                    fontWeight: FontWeight.w500,
-                                                    color: AppColors.primary,
+                                        )?.then((_) {
+                                          controller.fetchPeople();
+                                          controller.fetchGroups();
+                                        });
+                                      },
+                                      child: Container(
+                                        height: 56,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                        ),
+                                        alignment: Alignment.centerLeft,
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              width: 11,
+                                              height: 11,
+                                              decoration: BoxDecoration(
+                                                color: color,
+                                                shape: BoxShape.circle,
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black
+                                                        .withOpacity(0.15),
+                                                    offset: const Offset(1, 1),
+                                                    blurRadius: 3,
                                                   ),
-                                            ),
-                                          ),
-                                          // Drag Handle
-                                          Obx(() {
-                                            return Visibility(
-                                              visible: controller
-                                                  .isReorderMode
-                                                  .value,
-                                              child: ReorderableDragStartListener(
-                                                index: index,
-                                                child: const Padding(
-                                                  padding: EdgeInsets.all(8.0),
-                                                  child: Icon(
-                                                    Icons
-                                                        .menu, // Hamburger icon
-                                                    color:
-                                                        AppColors.textTertiary,
-                                                    size: 20,
-                                                  ),
-                                                ),
+                                                ],
                                               ),
-                                            );
-                                          }),
-                                        ],
+                                            ),
+                                            const SizedBox(width: 28),
+                                            Expanded(
+                                              child: Text(
+                                                person.name,
+                                                style: AppTextStyles.header2
+                                                    .copyWith(
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color: AppColors.primary,
+                                                    ),
+                                              ),
+                                            ),
+                                            // Drag Handle
+                                            Obx(() {
+                                              return Visibility(
+                                                visible: controller
+                                                    .isReorderMode
+                                                    .value,
+                                                child: ReorderableDragStartListener(
+                                                  index: index,
+                                                  child: const Padding(
+                                                    padding: EdgeInsets.all(
+                                                      8.0,
+                                                    ),
+                                                    child: Icon(
+                                                      Icons
+                                                          .menu, // Hamburger icon
+                                                      color: AppColors
+                                                          .textTertiary,
+                                                      size: 20,
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            }),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                // Divider (Custom implementation since ReorderableListView has no separator)
-                                if (index < people.length - 1)
-                                  const Divider(
-                                    height: 1,
-                                    color: Color(0xFFEBEBEB),
-                                    thickness: 1,
-                                  ),
-                              ],
+                                  // Divider (Custom implementation since ReorderableListView has no separator)
+                                  if (index < people.length - 1)
+                                    const Divider(
+                                      height: 1,
+                                      color: Color(0xFFEBEBEB),
+                                      thickness: 1,
+                                    ),
+                                ],
+                              ),
                             ),
                           );
                         },
