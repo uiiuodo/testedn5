@@ -188,82 +188,47 @@ class PersonEditScreen extends StatelessWidget {
                         label: '생년월일 (선택)',
                         icon: Icons.calendar_today,
                         onIconTap: () {
-                          controller.pickBirthDate(context);
+                          _showBirthDatePicker(context, controller);
                         },
                         onDelete: () {
                           controller.birthDate.value = null;
                           controller.showBirthDate.value = false;
                         },
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            GestureDetector(
-                              onTap: () {
-                                controller.pickBirthDate(context);
-                              },
-                              child: Obx(() {
-                                final date = controller.birthDate.value;
-                                return Text(
-                                  date != null
-                                      ? DateFormat('yyyy-MM-dd').format(date)
-                                      : '선택해주세요',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: date != null
-                                        ? const Color(0xFF2A2A2A)
-                                        : const Color(0xFFCCCCCC),
-                                  ),
-                                );
-                              }),
-                            ),
-                            Obx(() {
-                              if (controller.birthDate.value != null) {
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        GestureDetector(
-                                          onTap: controller.toggleLunar,
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                controller.isLunar.value
-                                                    ? Icons.check_box
-                                                    : Icons
-                                                          .check_box_outline_blank,
-                                                size: 16,
-                                                color: AppColors.primary,
-                                              ),
-                                              const SizedBox(width: 4),
-                                              const Text(
-                                                '음력으로 변경',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: Color(0xFF666666),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Text(
-                                          controller.koreanAge.value,
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: AppColors.primary,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                );
-                              }
-                              return const SizedBox.shrink();
-                            }),
-                          ],
+                        child: GestureDetector(
+                          onTap: () {
+                            _showBirthDatePicker(context, controller);
+                          },
+                          child: Obx(() {
+                            final date = controller.birthDate.value;
+                            final isLunar = controller.isLunarBirth.value;
+                            final lunarDate = controller.lunarBirthDate.value;
+
+                            if (date == null) {
+                              return const Text(
+                                '선택해주세요',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFFCCCCCC),
+                                ),
+                              );
+                            }
+
+                            String text;
+                            if (isLunar && lunarDate != null) {
+                              text =
+                                  '음력 ${DateFormat('yyyy-MM-dd').format(lunarDate)}';
+                            } else {
+                              text = DateFormat('yyyy-MM-dd').format(date);
+                            }
+
+                            return Text(
+                              text,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF2A2A2A),
+                              ),
+                            );
+                          }),
                         ),
                       )
                     : const SizedBox.shrink(),
@@ -1119,6 +1084,109 @@ class PersonEditScreen extends StatelessWidget {
             child: const Text('추가'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showBirthDatePicker(
+    BuildContext context,
+    PersonEditController controller,
+  ) {
+    DateTime selectedDate =
+        controller.lunarBirthDate.value ??
+        controller.birthDate.value ??
+        DateTime.now();
+    bool isLunar = controller.isLunarBirth.value;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Container(
+              height: 500,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text('생년월일 선택', style: AppTextStyles.header2),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildTypeButton('양력', !isLunar, () {
+                        setState(() => isLunar = false);
+                      }),
+                      const SizedBox(width: 10),
+                      _buildTypeButton('음력', isLunar, () {
+                        setState(() => isLunar = true);
+                      }),
+                    ],
+                  ),
+                  Expanded(
+                    child: CalendarDatePicker(
+                      initialDate: selectedDate,
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime.now(),
+                      onDateChanged: (date) {
+                        setState(() => selectedDate = date);
+                      },
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          controller.setBirthDate(selectedDate, isLunar);
+                          Get.back();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: const Text(
+                          '확인',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildTypeButton(String text, bool isSelected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : Colors.grey[200],
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
     );
   }

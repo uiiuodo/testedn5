@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import '../../../data/model/person.dart';
 import '../calendar/person_calendar/person_calendar_screen.dart';
 import '../calendar/person_calendar/person_calendar_controller.dart';
 import '../../../data/model/anniversary.dart';
@@ -86,11 +87,7 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
                         const SizedBox(height: 20),
                         _buildInfoRow(
                           '생년월일',
-                          person.birthDate != null
-                              ? DateFormat(
-                                  'yyyy.MM.dd',
-                                ).format(person.birthDate!)
-                              : '-',
+                          _buildBirthdayText(person, controller),
                         ),
                         _buildInfoRow('전화번호', person.phone ?? '-'),
                         _buildInfoRow('주소', person.address ?? '-'),
@@ -170,6 +167,15 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
         }),
       ),
     );
+  }
+
+  String _buildBirthdayText(Person person, PersonDetailController controller) {
+    if (person.birthDate == null) return '-';
+    if (controller.isLunarBirth.value &&
+        controller.lunarBirthDate.value != null) {
+      return '음력 ${DateFormat('yyyy.MM.dd').format(controller.lunarBirthDate.value!)}';
+    }
+    return DateFormat('yyyy.MM.dd').format(person.birthDate!);
   }
 
   Widget _buildSectionHeader(String title) {

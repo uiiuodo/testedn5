@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'service/data_service.dart';
+import 'service/person_metadata_service.dart';
 import 'ui/page/splash/splash_page.dart';
 import 'ui/theme/app_theme.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -15,6 +16,7 @@ void main() async {
 
   // Initialize Hive and DataService
   await Get.putAsync(() => DataService().init());
+  await Get.putAsync(() => PersonMetadataService().init());
 
   runApp(const MyApp());
 }

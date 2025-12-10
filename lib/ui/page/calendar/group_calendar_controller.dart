@@ -107,7 +107,17 @@ class GroupCalendarController extends GetxController {
       if (person.birthDate != null) {
         final birthDate = person.birthDate!;
         if (birthDate.month == day.month && birthDate.day == day.day) {
-          events.add('🎂 ${person.name}');
+          // Check if explicit schedule exists to avoid duplicate
+          final hasSchedule = filteredCalendarSchedules.any(
+            (s) =>
+                s.personIds.contains(person.id) &&
+                s.type == ScheduleType.anniversary &&
+                isSameDay(s.startDateTime, day),
+          );
+
+          if (!hasSchedule) {
+            events.add('🎂 ${person.name}');
+          }
         }
       }
 

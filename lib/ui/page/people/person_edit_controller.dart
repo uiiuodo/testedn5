@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
+import 'package:lunar/lunar.dart';
 import '../../../data/model/person.dart';
 import '../../../data/model/group.dart';
 import '../../../data/model/anniversary.dart';
@@ -8,6 +9,8 @@ import '../../../data/model/memo.dart';
 import '../../../data/model/preference_category.dart';
 import '../../../data/repository/person_repository.dart';
 import '../../../data/repository/group_repository.dart';
+import '../../../service/person_metadata_service.dart';
+import '../../../service/birthday_scheduler.dart';
 import '../home/home_controller.dart';
 
 class PersonEditController extends GetxController {
@@ -22,6 +25,10 @@ class PersonEditController extends GetxController {
   final emailController = TextEditingController();
 
   final Rx<DateTime?> birthDate = Rx<DateTime?>(null);
+  final RxBool isLunarBirth = false.obs;
+  final Rx<DateTime?> lunarBirthDate = Rx<DateTime?>(null);
+  final RxBool isLeapMonth =
+      false.obs; // For Lunar leap month support if needed
   final RxString selectedGroupId = ''.obs;
 
   // Visibility Flags
@@ -37,7 +44,7 @@ class PersonEditController extends GetxController {
 
   // New Fields (Memory Only)
   final mbtiController = TextEditingController();
-  final RxBool isLunar = false.obs;
+  final RxBool showLunar = false.obs; // Legacy, check if used
   final RxList<MapEntry<String, TextEditingController>> customFields =
       <MapEntry<String, TextEditingController>>[].obs;
   final RxString koreanAge = ''.obs;
@@ -82,23 +89,29 @@ class PersonEditController extends GetxController {
     koreanAge.value = '만 $age세';
   }
 
-  Future<void> pickBirthDate(BuildContext context) async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: birthDate.value ?? DateTime.now(),
-      firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
-    );
-    if (date != null) {
+  void setBirthDate(DateTime date, bool isLunar) {
+    if (isLunar) {
+      final lunar = Lunar.fromYmd(date.year, date.month, date.day);
+      final solar = lunar.getSolar();
+      final solarDate = DateTime(
+        solar.getYear(),
+        solar.getMonth(),
+        solar.getDay(),
+      );
+
+      lunarBirthDate.value = date;
+      birthDate.value = solarDate;
+      isLunarBirth.value = true;
+    } else {
+      lunarBirthDate.value = null;
       birthDate.value = date;
-      showBirthDate.value = true;
+      isLunarBirth.value = false;
     }
   }
 
-  void toggleLunar() {
-    isLunar.toggle();
-    // TODO: Implement Lunar to Solar conversion logic here
-    // Currently just toggles the flag for UI display
+  void pickBirthDate(BuildContext context) async {
+    // We will use a custom dialog in the UI to handle Solar/Lunar selection
+    // This method might be deprecated or updated to show that dialog
   }
 
   void fetchGroups() {
@@ -158,6 +171,10 @@ class PersonEditController extends GetxController {
       // If we wanted to hide empty fields, we would do:
       // showPhone.value = person.phone != null && person.phone!.isNotEmpty;
       // But per instructions, we initialize them to true.
+      // Load Lunar Metadata
+      final metadataService = Get.find<PersonMetadataService>();
+      isLunarBirth.value = metadataService.getIsLunar(id);
+      lunarBirthDate.value = metadataService.getLunarDate(id);
     }
   }
 
@@ -196,6 +213,17 @@ class PersonEditController extends GetxController {
     } else {
       await _personRepository.addPerson(newPerson);
     }
+
+    // Save Lunar Metadata
+    final metadataService = Get.find<PersonMetadataService>();
+    await metadataService.setLunarBirthday(
+      newPerson.id,
+      isLunarBirth.value,
+      lunarBirthDate.value,
+    );
+
+    // Schedule Birthday Event
+    await BirthdayScheduler.scheduleBirthday(newPerson);
 
     // Refresh Home
     if (Get.isRegistered<HomeController>()) {
