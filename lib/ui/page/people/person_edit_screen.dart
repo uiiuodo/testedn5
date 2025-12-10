@@ -5,6 +5,8 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/common/custom_app_bar.dart';
 import '../../widgets/common/custom_input_field.dart';
+import '../../widgets/common/group_add_bottom_sheet.dart';
+import '../../widgets/common/group_dropdown_menu.dart';
 import 'person_edit_controller.dart';
 
 class PersonEditScreen extends StatelessWidget {
@@ -16,6 +18,7 @@ class PersonEditScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.put(PersonEditController(personId: personId));
     final FocusNode nameFocusNode = FocusNode();
+    final GlobalKey groupButtonKey = GlobalKey();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -41,7 +44,6 @@ class PersonEditScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 1. Name / Nickname & Group Selection
-              // 1. Name / Nickname & Group Selection (Inline Row)
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -83,8 +85,40 @@ class PersonEditScreen extends StatelessWidget {
 
                   // Group Selection
                   GestureDetector(
+                    key: groupButtonKey,
                     onTap: () {
-                      _showGroupSelectionDialog(context, controller);
+                      final RenderBox renderBox =
+                          groupButtonKey.currentContext!.findRenderObject()
+                              as RenderBox;
+                      final offset = renderBox.localToGlobal(Offset.zero);
+                      final position = RelativeRect.fromLTRB(
+                        offset.dx,
+                        offset.dy + renderBox.size.height,
+                        offset.dx + renderBox.size.width,
+                        offset.dy + renderBox.size.height + 200,
+                      );
+
+                      showGroupDropdown(
+                        context,
+                        position: position,
+                        groups: controller.groups,
+                        onGroupSelected: (group) {
+                          controller.selectedGroupId.value = group.id;
+                        },
+                        onAddGroup: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (context) => GroupAddBottomSheet(
+                              onAdd: (name, colorValue) {
+                                controller.addNewGroup(name, colorValue);
+                                Get.back(); // Close bottom sheet
+                              },
+                            ),
+                          );
+                        },
+                      );
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
@@ -110,10 +144,8 @@ class PersonEditScreen extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 13,
                                 color: isPlaceholder
-                                    ? const Color(
-                                        0xFFCCCCCC,
-                                      ) // Placeholder color
-                                    : const Color(0xFF2A2A2A), // Selected color
+                                    ? const Color(0xFFCCCCCC)
+                                    : const Color(0xFF2A2A2A),
                               ),
                             );
                           }),
@@ -133,93 +165,234 @@ class PersonEditScreen extends StatelessWidget {
 
               // 2. Info Fields (Fixed List)
               // Birthday
-              _buildInfoRow(
-                label: '생년월일 (선택)',
-                icon: Icons.calendar_today,
-                onDelete: () {
-                  controller.birthDate.value = null;
-                  controller.showBirthDate.value = false; // Logic compatibility
-                },
-                child: GestureDetector(
-                  onTap: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: controller.birthDate.value ?? DateTime.now(),
-                      firstDate: DateTime(1900),
-                      lastDate: DateTime.now(),
-                    );
-                    if (date != null) {
-                      controller.birthDate.value = date;
-                      controller.showBirthDate.value = true;
-                    }
-                  },
-                  child: Obx(() {
-                    final date = controller.birthDate.value;
-                    return Text(
-                      date != null
-                          ? DateFormat('yyyy-MM-dd').format(date)
-                          : '선택해주세요',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: date != null
-                            ? const Color(0xFF2A2A2A)
-                            : const Color(0xFFCCCCCC),
-                      ),
-                    );
-                  }),
-                ),
+              Obx(
+                () => controller.showBirthDate.value
+                    ? _buildInfoRow(
+                        label: '생년월일 (선택)',
+                        icon: Icons.calendar_today,
+                        onIconTap: () {
+                          controller.pickBirthDate(context);
+                        },
+                        onDelete: () {
+                          controller.birthDate.value = null;
+                          controller.showBirthDate.value = false;
+                        },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                controller.pickBirthDate(context);
+                              },
+                              child: Obx(() {
+                                final date = controller.birthDate.value;
+                                return Text(
+                                  date != null
+                                      ? DateFormat('yyyy-MM-dd').format(date)
+                                      : '선택해주세요',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: date != null
+                                        ? const Color(0xFF2A2A2A)
+                                        : const Color(0xFFCCCCCC),
+                                  ),
+                                );
+                              }),
+                            ),
+                            Obx(() {
+                              if (controller.birthDate.value != null) {
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        GestureDetector(
+                                          onTap: controller.toggleLunar,
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                controller.isLunar.value
+                                                    ? Icons.check_box
+                                                    : Icons
+                                                          .check_box_outline_blank,
+                                                size: 16,
+                                                color: AppColors.primary,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              const Text(
+                                                '음력으로 변경',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Color(0xFF666666),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Text(
+                                          controller.koreanAge.value,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: AppColors.primary,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                );
+                              }
+                              return const SizedBox.shrink();
+                            }),
+                          ],
+                        ),
+                      )
+                    : const SizedBox.shrink(),
               ),
               const SizedBox(height: 16),
 
               // Phone
-              _buildInfoRow(
-                label: '전화번호 (선택)',
-                onDelete: () {
-                  controller.phoneController.clear();
-                  controller.showPhone.value = false;
-                },
-                child: CustomInputField(
-                  controller: controller.phoneController,
-                  hint: '입력해주세요',
-                  keyboardType: TextInputType.phone,
-                  onChanged: (val) {
-                    if (val.isNotEmpty) controller.showPhone.value = true;
-                  },
-                ),
+              Obx(
+                () => controller.showPhone.value
+                    ? _buildInfoRow(
+                        label: '전화번호 (선택)',
+                        onDelete: () {
+                          controller.phoneController.clear();
+                          controller.showPhone.value = false;
+                        },
+                        child: CustomInputField(
+                          controller: controller.phoneController,
+                          hint: '입력해주세요',
+                          keyboardType: TextInputType.phone,
+                          onChanged: (val) {
+                            if (val.isNotEmpty)
+                              controller.showPhone.value = true;
+                          },
+                        ),
+                      )
+                    : const SizedBox.shrink(),
               ),
               const SizedBox(height: 16),
 
               // Address
-              _buildInfoRow(
-                label: '주소 (선택)',
-                onDelete: () {
-                  controller.addressController.clear();
-                  controller.showAddress.value = false;
-                },
-                child: CustomInputField(
-                  controller: controller.addressController,
-                  hint: '입력해주세요',
-                  onChanged: (val) {
-                    if (val.isNotEmpty) controller.showAddress.value = true;
-                  },
-                ),
+              Obx(
+                () => controller.showAddress.value
+                    ? _buildInfoRow(
+                        label: '주소 (선택)',
+                        onDelete: () {
+                          controller.addressController.clear();
+                          controller.showAddress.value = false;
+                        },
+                        child: CustomInputField(
+                          controller: controller.addressController,
+                          hint: '입력해주세요',
+                          onChanged: (val) {
+                            if (val.isNotEmpty)
+                              controller.showAddress.value = true;
+                          },
+                        ),
+                      )
+                    : const SizedBox.shrink(),
               ),
               const SizedBox(height: 16),
 
               // Email
-              _buildInfoRow(
-                label: 'e-mail (선택)',
-                onDelete: () {
-                  controller.emailController.clear();
-                  controller.showEmail.value = false;
+              Obx(
+                () => controller.showEmail.value
+                    ? _buildInfoRow(
+                        label: 'e-mail (선택)',
+                        onDelete: () {
+                          controller.emailController.clear();
+                          controller.showEmail.value = false;
+                        },
+                        child: CustomInputField(
+                          controller: controller.emailController,
+                          hint: '입력해주세요',
+                          keyboardType: TextInputType.emailAddress,
+                          onChanged: (val) {
+                            if (val.isNotEmpty)
+                              controller.showEmail.value = true;
+                          },
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+              const SizedBox(height: 16),
+
+              // MBTI
+              Obx(
+                () => controller.showMbti.value
+                    ? _buildInfoRow(
+                        label: 'MBTI (선택)',
+                        onDelete: () {
+                          controller.mbtiController.clear();
+                          controller.showMbti.value = false;
+                        },
+                        child: CustomInputField(
+                          controller: controller.mbtiController,
+                          hint: '입력해주세요',
+                          onChanged: (val) {
+                            if (val.isNotEmpty)
+                              controller.showMbti.value = true;
+                          },
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+              const SizedBox(height: 16),
+
+              // Custom Fields
+              Obx(
+                () => Column(
+                  children: controller.customFields.asMap().entries.map((
+                    entry,
+                  ) {
+                    final index = entry.key;
+                    final field = entry.value;
+                    return Column(
+                      children: [
+                        _buildInfoRow(
+                          label: '${field.key} (선택)',
+                          onDelete: () {
+                            controller.removeCustomField(index);
+                          },
+                          child: CustomInputField(
+                            controller: field.value,
+                            hint: '입력해주세요',
+                            onChanged: (val) {},
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
+
+              // Add Custom Field Button
+              GestureDetector(
+                onTap: () {
+                  _showAddCustomFieldDialog(context, controller);
                 },
-                child: CustomInputField(
-                  controller: controller.emailController,
-                  hint: '입력해주세요',
-                  keyboardType: TextInputType.emailAddress,
-                  onChanged: (val) {
-                    if (val.isNotEmpty) controller.showEmail.value = true;
-                  },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: const Color(0xFFEBEBEB)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '+ 기본 정보 추가',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 40),
@@ -359,7 +532,7 @@ class PersonEditScreen extends StatelessWidget {
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
-                        vertical: 6, // Reduced padding
+                        vertical: 6,
                       ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF5F5F5),
@@ -370,7 +543,6 @@ class PersonEditScreen extends StatelessWidget {
                           Expanded(
                             child: GestureDetector(
                               onTap: () async {
-                                // Edit Anniversary Dialog
                                 final titleController = TextEditingController(
                                   text: anniv.title,
                                 );
@@ -511,8 +683,6 @@ class PersonEditScreen extends StatelessWidget {
                     onTap: () {
                       if (controller.newMemoController.text.isNotEmpty) {
                         controller.addMemo(controller.newMemoController.text);
-                      } else {
-                        // Focus or show input if hidden (currently always visible)
                       }
                     },
                     child: const Icon(
@@ -534,7 +704,7 @@ class PersonEditScreen extends StatelessWidget {
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
-                        vertical: 6, // Reduced padding
+                        vertical: 6,
                       ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF5F5F5),
@@ -613,9 +783,6 @@ class PersonEditScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // Optional: Keep the 'Add' button inside or rely on the header (+) button
-                    // User requested (+) button in header, but existing logic had inline add.
-                    // We'll keep the inline add button for better UX as per "card style" request implies input area.
                     GestureDetector(
                       onTap: () {
                         if (controller.newMemoController.text.isNotEmpty) {
@@ -695,8 +862,8 @@ class PersonEditScreen extends StatelessWidget {
                                     controller.updatePreference(
                                       index,
                                       value,
-                                      pref.like,
-                                      pref.dislike,
+                                      pref.like ?? '',
+                                      pref.dislike ?? '',
                                     );
                                   },
                                   style: const TextStyle(
@@ -743,7 +910,7 @@ class PersonEditScreen extends StatelessWidget {
                                       index,
                                       pref.title,
                                       value,
-                                      pref.dislike,
+                                      pref.dislike ?? '',
                                     );
                                   },
                                   maxLines: null,
@@ -779,7 +946,7 @@ class PersonEditScreen extends StatelessWidget {
                                     controller.updatePreference(
                                       index,
                                       pref.title,
-                                      pref.like,
+                                      pref.like ?? '',
                                       value,
                                     );
                                   },
@@ -852,6 +1019,7 @@ class PersonEditScreen extends StatelessWidget {
     required Widget child,
     required VoidCallback onDelete,
     IconData? icon,
+    VoidCallback? onIconTap,
   }) {
     return Row(
       children: [
@@ -870,7 +1038,10 @@ class PersonEditScreen extends StatelessWidget {
           child: Row(
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 16, color: const Color(0xFF999999)),
+                GestureDetector(
+                  onTap: onIconTap,
+                  child: Icon(icon, size: 16, color: const Color(0xFF999999)),
+                ),
                 const SizedBox(width: 8),
               ],
               Expanded(child: child),
@@ -890,80 +1061,41 @@ class PersonEditScreen extends StatelessWidget {
     );
   }
 
-  void _showGroupSelectionDialog(
+  void _showAddCustomFieldDialog(
     BuildContext context,
     PersonEditController controller,
   ) {
+    final titleController = TextEditingController();
+    final contentController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('그룹 선택'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: Obx(
-            () => ListView.builder(
-              shrinkWrap: true,
-              itemCount: controller.groups.length + 1,
-              itemBuilder: (context, index) {
-                if (index == controller.groups.length) {
-                  // Add Group Option
-                  return ListTile(
-                    leading: const Icon(Icons.add, color: Color(0xFF999999)),
-                    title: const Text(
-                      '그룹 추가하기',
-                      style: TextStyle(color: Color(0xFF999999)),
-                    ),
-                    onTap: () {
-                      Get.back();
-                      _showAddGroupDialog(context, controller);
-                    },
-                  );
-                }
-
-                final group = controller.groups[index];
-                return ListTile(
-                  leading: Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: Color(group.colorValue),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  title: Text(group.name),
-                  onTap: () {
-                    controller.selectedGroupId.value = group.id;
-                    Get.back();
-                  },
-                );
-              },
+        title: const Text('기본 정보 추가'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: titleController,
+              decoration: const InputDecoration(labelText: '항목명 (예: 별명)'),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showAddGroupDialog(
-    BuildContext context,
-    PersonEditController controller,
-  ) {
-    final textController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('새 그룹 추가'),
-        content: TextField(
-          controller: textController,
-          decoration: const InputDecoration(hintText: '그룹 이름', isDense: true),
-          autofocus: true,
+            const SizedBox(height: 16),
+            TextField(
+              controller: contentController,
+              decoration: const InputDecoration(labelText: '내용 (예: 가원)'),
+            ),
+          ],
         ),
         actions: [
           TextButton(onPressed: () => Get.back(), child: const Text('취소')),
           TextButton(
             onPressed: () {
-              if (textController.text.isNotEmpty) {
-                controller.addNewGroup(textController.text);
+              if (titleController.text.isNotEmpty &&
+                  contentController.text.isNotEmpty) {
+                controller.addCustomField(
+                  titleController.text,
+                  contentController.text,
+                );
                 Get.back();
               }
             },

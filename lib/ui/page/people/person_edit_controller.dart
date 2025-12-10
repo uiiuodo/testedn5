@@ -25,20 +25,28 @@ class PersonEditController extends GetxController {
   final RxString selectedGroupId = ''.obs;
 
   // Visibility Flags
-  final RxBool showBirthDate = false.obs;
-  final RxBool showPhone = false.obs;
-  final RxBool showAddress = false.obs;
-  final RxBool showEmail = false.obs;
+  final RxBool showBirthDate = true.obs;
+  final RxBool showPhone = true.obs;
+  final RxBool showAddress = true.obs;
+  final RxBool showEmail = true.obs;
+  final RxBool showMbti = true.obs;
 
   final RxList<Anniversary> anniversaries = <Anniversary>[].obs;
   final RxList<Memo> memos = <Memo>[].obs;
   final RxList<PreferenceCategory> preferences = <PreferenceCategory>[].obs;
 
+  // New Fields (Memory Only)
+  final mbtiController = TextEditingController();
+  final RxBool isLunar = false.obs;
+  final RxList<MapEntry<String, TextEditingController>> customFields =
+      <MapEntry<String, TextEditingController>>[].obs;
+  final RxString koreanAge = ''.obs;
+
   final RxList<Group> groups = <Group>[].obs;
 
   // UI State for inline adding
   final RxBool isAddingAnniversary = false.obs;
-  final Rx<DateTime> newAnniversaryDate = DateTime.now().obs;
+  final Rx<DateTime> newAnniversaryDate = Rx<DateTime>(DateTime.now());
   final newAnniversaryTitleController = TextEditingController();
   final newMemoController = TextEditingController();
 
@@ -51,19 +59,53 @@ class PersonEditController extends GetxController {
     if (personId != null) {
       loadPerson(personId!);
     }
+
+    // Listen to birthDate changes to calculate Korean Age
+    ever(birthDate, (_) => _calculateKoreanAge());
+  }
+
+  void _calculateKoreanAge() {
+    if (birthDate.value == null) {
+      koreanAge.value = '';
+      return;
+    }
+    final now = DateTime.now();
+    final birthYear = birthDate.value!.year;
+    final currentYear = now.year;
+    // Korean Age (Man Age) calculation
+    int age = currentYear - birthYear;
+    if (now.month < birthDate.value!.month ||
+        (now.month == birthDate.value!.month &&
+            now.day < birthDate.value!.day)) {
+      age--;
+    }
+    koreanAge.value = '만 $age세';
+  }
+
+  Future<void> pickBirthDate(BuildContext context) async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: birthDate.value ?? DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (date != null) {
+      birthDate.value = date;
+      showBirthDate.value = true;
+    }
+  }
+
+  void toggleLunar() {
+    isLunar.toggle();
+    // TODO: Implement Lunar to Solar conversion logic here
+    // Currently just toggles the flag for UI display
   }
 
   void fetchGroups() {
     groups.value = _groupRepository.getGroups();
   }
 
-  void addNewGroup(String name) async {
-    // Generate a random color for the new group
-    // Simple random color generation for now
-    final int colorValue =
-        (0xFF000000 + (DateTime.now().millisecondsSinceEpoch & 0xFFFFFF)) |
-        0xFF000000;
-
+  void addNewGroup(String name, int colorValue) async {
     final newGroup = Group(
       id: const Uuid().v4(),
       name: name,
@@ -73,6 +115,27 @@ class PersonEditController extends GetxController {
     await _groupRepository.addGroup(newGroup);
     fetchGroups();
     selectedGroupId.value = newGroup.id;
+  }
+
+  void updateGroup(String id, String newName) async {
+    final group = groups.firstWhereOrNull((g) => g.id == id);
+    if (group != null) {
+      final updatedGroup = Group(
+        id: group.id,
+        name: newName,
+        colorValue: group.colorValue,
+      );
+      await _groupRepository.updateGroup(updatedGroup);
+      fetchGroups();
+    }
+  }
+
+  void deleteGroup(String id) async {
+    await _groupRepository.deleteGroup(id);
+    fetchGroups();
+    if (selectedGroupId.value == id) {
+      selectedGroupId.value = '';
+    }
   }
 
   void loadPerson(String id) {
@@ -88,11 +151,13 @@ class PersonEditController extends GetxController {
       memos.value = List.from(person.memos);
       preferences.value = List.from(person.preferences);
 
-      // Set visibility flags based on data presence
-      showBirthDate.value = person.birthDate != null;
-      showPhone.value = person.phone != null && person.phone!.isNotEmpty;
-      showAddress.value = person.address != null && person.address!.isNotEmpty;
-      showEmail.value = person.email != null && person.email!.isNotEmpty;
+      // Note: MBTI, Custom Fields, Lunar info are not loaded as they are not in the model yet.
+
+      // We do NOT set visibility flags to false here, because we want them visible by default
+      // so the user can edit them. They are UI state only.
+      // If we wanted to hide empty fields, we would do:
+      // showPhone.value = person.phone != null && person.phone!.isNotEmpty;
+      // But per instructions, we initialize them to true.
     }
   }
 
@@ -123,6 +188,7 @@ class PersonEditController extends GetxController {
       anniversaries: anniversaries,
       memos: memos,
       preferences: preferences,
+      // Note: MBTI, Custom Fields, Lunar info are not saved as they are not in the model yet.
     );
 
     if (personId != null) {
@@ -139,40 +205,21 @@ class PersonEditController extends GetxController {
     Get.back();
   }
 
+  // Anniversary Logic
   void addAnniversary(String title, DateTime date) {
     anniversaries.add(
       Anniversary(
         id: const Uuid().v4(),
-        personId: personId ?? '', // Will be updated on save if new
+        personId: personId ?? '',
         title: title,
         date: date,
-        type: AnniversaryType.etc, // Default
+        type: AnniversaryType.etc,
       ),
     );
   }
 
-  void addMemo(String content) {
-    memos.add(
-      Memo(
-        id: const Uuid().v4(),
-        personId: personId ?? '',
-        createdAt: DateTime.now(),
-        content: content,
-      ),
-    );
-    newMemoController.clear();
-  }
-
-  void addPreference(String title, String? like, String? dislike) {
-    preferences.add(
-      PreferenceCategory(
-        id: const Uuid().v4(),
-        personId: personId ?? '',
-        title: title,
-        like: like,
-        dislike: dislike,
-      ),
-    );
+  void removeAnniversary(int index) {
+    anniversaries.removeAt(index);
   }
 
   void updateAnniversary(int index, String title, DateTime date) {
@@ -186,24 +233,21 @@ class PersonEditController extends GetxController {
     );
   }
 
-  void removeAnniversary(int index) {
-    anniversaries.removeAt(index);
+  // Memo Logic
+  void addMemo(String content) {
+    memos.add(
+      Memo(
+        id: const Uuid().v4(),
+        personId: personId ?? '',
+        createdAt: DateTime.now(),
+        content: content,
+      ),
+    );
+    newMemoController.clear();
   }
 
-  void updatePreference(
-    int index,
-    String title,
-    String? like,
-    String? dislike,
-  ) {
-    final oldPref = preferences[index];
-    preferences[index] = PreferenceCategory(
-      id: oldPref.id,
-      personId: oldPref.personId,
-      title: title,
-      like: like,
-      dislike: dislike,
-    );
+  void removeMemo(int index) {
+    memos.removeAt(index);
   }
 
   void updateMemo(int index, String content) {
@@ -216,11 +260,39 @@ class PersonEditController extends GetxController {
     );
   }
 
-  void removeMemo(int index) {
-    memos.removeAt(index);
+  // Preference Logic
+  void addPreference(String title, String like, String dislike) {
+    preferences.add(
+      PreferenceCategory(
+        id: const Uuid().v4(),
+        personId: personId ?? '',
+        title: title,
+        like: like,
+        dislike: dislike,
+      ),
+    );
+  }
+
+  void updatePreference(int index, String title, String like, String dislike) {
+    final oldPref = preferences[index];
+    preferences[index] = PreferenceCategory(
+      id: oldPref.id,
+      personId: oldPref.personId,
+      title: title,
+      like: like,
+      dislike: dislike,
+    );
   }
 
   void removePreference(int index) {
     preferences.removeAt(index);
+  }
+
+  void addCustomField(String title, String content) {
+    customFields.add(MapEntry(title, TextEditingController(text: content)));
+  }
+
+  void removeCustomField(int index) {
+    customFields.removeAt(index);
   }
 }

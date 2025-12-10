@@ -19,4 +19,12 @@ class GroupRepository {
       return null;
     }
   }
+
+  Future<void> updateGroup(Group group) async {
+    await _box.put(group.id, group);
+  }
+
+  Future<void> deleteGroup(String id) async {
+    await _box.delete(id);
+  }
 }
