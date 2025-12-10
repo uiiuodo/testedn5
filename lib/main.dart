@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'service/data_service.dart';
@@ -30,6 +31,13 @@ class MyApp extends StatelessWidget {
       title: '너기',
       theme: AppTheme.light,
       home: const SplashPage(),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('ko', 'KR')],
+      locale: const Locale('ko', 'KR'),
       debugShowCheckedModeBanner: false,
     );
   }
