@@ -25,7 +25,7 @@ class _PreferenceAddBottomSheetState extends State<PreferenceAddBottomSheet> {
   void initState() {
     super.initState();
     // Start with a bullet point
-    _contentController.text = '· ';
+    _contentController.text = '• ';
   }
 
   @override
@@ -39,7 +39,7 @@ class _PreferenceAddBottomSheetState extends State<PreferenceAddBottomSheet> {
     // Simple auto-bullet logic
     // If the user just pressed enter (newline), add a bullet
     if (value.endsWith('\n')) {
-      final newValue = '$value· ';
+      final newValue = '$value• ';
       _contentController.value = TextEditingValue(
         text: newValue,
         selection: TextSelection.collapsed(offset: newValue.length),
@@ -66,7 +66,9 @@ class _PreferenceAddBottomSheetState extends State<PreferenceAddBottomSheet> {
     for (final line in rawLines) {
       // Remove leading bullet and whitespace
       var cleanLine = line.trim();
-      if (cleanLine.startsWith('·')) {
+      if (cleanLine.startsWith('•')) {
+        cleanLine = cleanLine.substring(1).trim();
+      } else if (cleanLine.startsWith('·')) {
         cleanLine = cleanLine.substring(1).trim();
       }
 
@@ -131,20 +133,24 @@ class _PreferenceAddBottomSheetState extends State<PreferenceAddBottomSheet> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     decoration: BoxDecoration(
-                      color: _isLike == true
-                          ? const Color(0xFF4DA3FF) // Sky Blue
-                          : const Color(0xFFF5F5F5), // Light Gray
+                      color: const Color(0xFFF7F7F7), // Very Light Gray
                       borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _isLike == true
+                            ? const Color(0xFF2F80ED) // Blue
+                            : Colors.transparent,
+                        width: 2.0,
+                      ),
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       '선호',
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: _isLike == true
-                            ? const Color(0xFF003366) // Dark Blue
-                            : const Color(0xFF9E9E9E),
+                        fontWeight: _isLike == true
+                            ? FontWeight.bold
+                            : FontWeight.w600,
+                        color: const Color(0xFF333333), // Dark Gray
                       ),
                     ),
                   ),
@@ -161,20 +167,24 @@ class _PreferenceAddBottomSheetState extends State<PreferenceAddBottomSheet> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     decoration: BoxDecoration(
-                      color: _isLike == false
-                          ? const Color(0xFF424242) // Dark Gray
-                          : const Color(0xFFF5F5F5),
+                      color: const Color(0xFFF7F7F7), // Very Light Gray
                       borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _isLike == false
+                            ? const Color(0xFF000000) // Black
+                            : Colors.transparent,
+                        width: 2.0,
+                      ),
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       '비선호',
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: _isLike == false
-                            ? Colors.white
-                            : const Color(0xFF9E9E9E),
+                        fontWeight: _isLike == false
+                            ? FontWeight.bold
+                            : FontWeight.w600,
+                        color: const Color(0xFF333333), // Dark Gray
                       ),
                     ),
                   ),
