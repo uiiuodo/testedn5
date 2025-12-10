@@ -8,6 +8,7 @@ import 'ui/page/splash/splash_page.dart';
 import 'ui/theme/app_theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'data/repository/schedule_repository.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +19,9 @@ void main() async {
   // Initialize Hive and DataService
   await Get.putAsync(() => DataService().init());
   await Get.putAsync(() => PersonMetadataService().init());
+
+  // ⬇️ 여기서 ScheduleRepository 를 GetX DI 에 등록
+  Get.put(ScheduleRepository()); // ⬅️ 이 한 줄이 핵심
 
   runApp(const MyApp());
 }
