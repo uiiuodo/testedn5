@@ -347,6 +347,20 @@ class PersonEditController extends GetxController {
     preferences.removeAt(index);
   }
 
+  void addPreferences(String category, bool isLike, List<String> contents) {
+    for (final content in contents) {
+      preferences.add(
+        PreferenceCategory(
+          id: const Uuid().v4(),
+          personId: personId ?? '',
+          title: category,
+          like: isLike ? content : null,
+          dislike: !isLike ? content : null,
+        ),
+      );
+    }
+  }
+
   void addCustomField(String title, String content) {
     customFields.add(MapEntry(title, TextEditingController(text: content)));
   }

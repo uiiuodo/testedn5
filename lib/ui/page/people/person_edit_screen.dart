@@ -5,6 +5,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/common/custom_app_bar.dart';
 import '../../widgets/common/custom_input_field.dart';
+import 'preference_add_bottom_sheet.dart';
 import '../../widgets/common/group_add_bottom_sheet.dart';
 import '../../widgets/common/group_dropdown_menu.dart';
 import '../../widgets/common/group_management_bottom_sheet.dart';
@@ -717,127 +718,59 @@ class PersonEditScreen extends StatelessWidget {
                     final pref = entry.value;
                     return Container(
                       margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(5),
-                        border: Border.all(color: const Color(0xFFEBEBEB)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
                       ),
-                      child: Column(
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  initialValue: pref.title,
-                                  onChanged: (value) {
-                                    controller.updatePreference(
-                                      index,
-                                      value,
-                                      pref.like ?? '',
-                                      pref.dislike ?? '',
-                                    );
-                                  },
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFF404040),
-                                  ),
-                                  decoration: const InputDecoration(
-                                    isDense: true,
-                                    contentPadding: EdgeInsets.zero,
-                                    border: InputBorder.none,
-                                    hintText: '카테고리 (예: 음식)',
-                                  ),
+                          Expanded(
+                            child: RichText(
+                              text: TextSpan(
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF2A2A2A),
+                                  height: 1.4,
                                 ),
+                                children: [
+                                  TextSpan(
+                                    text: '${pref.title} ',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: pref.like != null
+                                        ? '- 선호 : '
+                                        : '- 비선호 : ',
+                                    style: TextStyle(
+                                      color: pref.like != null
+                                          ? AppColors.primary
+                                          : const Color(0xFFFF5252),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: pref.like ?? pref.dislike ?? '',
+                                  ),
+                                ],
                               ),
-                              GestureDetector(
-                                onTap: () {
-                                  controller.removePreference(index);
-                                },
-                                child: const Icon(
-                                  Icons.close,
-                                  size: 16,
-                                  color: Color(0xFF9D9D9D),
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
-                          const SizedBox(height: 8),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                '선호: ',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF00A6FF),
-                                ),
-                              ),
-                              Expanded(
-                                child: TextFormField(
-                                  initialValue: pref.like,
-                                  onChanged: (value) {
-                                    controller.updatePreference(
-                                      index,
-                                      pref.title,
-                                      value,
-                                      pref.dislike ?? '',
-                                    );
-                                  },
-                                  maxLines: null,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF464646),
-                                  ),
-                                  decoration: const InputDecoration(
-                                    isDense: true,
-                                    contentPadding: EdgeInsets.zero,
-                                    border: InputBorder.none,
-                                    hintText: '입력해주세요',
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                '비선호: ',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFFFF5C5C),
-                                ),
-                              ),
-                              Expanded(
-                                child: TextFormField(
-                                  initialValue: pref.dislike,
-                                  onChanged: (value) {
-                                    controller.updatePreference(
-                                      index,
-                                      pref.title,
-                                      pref.like ?? '',
-                                      value,
-                                    );
-                                  },
-                                  maxLines: null,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF464646),
-                                  ),
-                                  decoration: const InputDecoration(
-                                    isDense: true,
-                                    contentPadding: EdgeInsets.zero,
-                                    border: InputBorder.none,
-                                    hintText: '입력해주세요',
-                                  ),
-                                ),
-                              ),
-                            ],
+                          GestureDetector(
+                            onTap: () {
+                              controller.removePreference(index);
+                            },
+                            child: const Icon(
+                              Icons.close,
+                              size: 16,
+                              color: Color(0xFF9D9D9D),
+                            ),
                           ),
                         ],
                       ),
@@ -845,11 +778,23 @@ class PersonEditScreen extends StatelessWidget {
                   }).toList(),
                 ),
               ),
+              const SizedBox(height: 16),
+
               // Add Preference Button
               _buildAddButton(
                 label: '취향 기록 추가하기',
                 onTap: () {
-                  controller.addPreference('', '', '');
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => PreferenceAddBottomSheet(
+                      onAdd: (category, isLike, contents) {
+                        controller.addPreferences(category, isLike, contents);
+                        Get.back();
+                      },
+                    ),
+                  );
                 },
               ),
               const SizedBox(height: 40),
