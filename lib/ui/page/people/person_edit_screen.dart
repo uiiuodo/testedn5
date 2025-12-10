@@ -9,6 +9,7 @@ import '../../widgets/common/group_add_bottom_sheet.dart';
 import '../../widgets/common/group_dropdown_menu.dart';
 import '../../widgets/common/group_management_bottom_sheet.dart';
 import 'person_edit_controller.dart';
+import '../home/home_controller.dart';
 
 class PersonEditScreen extends StatelessWidget {
   final String? personId;
@@ -99,10 +100,23 @@ class PersonEditScreen extends StatelessWidget {
                         offset.dy + renderBox.size.height + 200,
                       );
 
+                      final homeController = Get.find<HomeController>();
+                      final usedIds = homeController.people
+                          .map((p) => p.groupId)
+                          .toSet();
+                      if (controller.selectedGroupId.value.isNotEmpty) {
+                        usedIds.add(controller.selectedGroupId.value);
+                      }
+
+                      final displayGroups = controller.groups
+                          .where((g) => usedIds.contains(g.id))
+                          .toList();
+                      displayGroups.sort((a, b) => a.name.compareTo(b.name));
+
                       showGroupDropdown(
                         context,
                         position: position,
-                        groups: controller.groups,
+                        groups: displayGroups,
                         onGroupSelected: (group) {
                           controller.selectedGroupId.value = group.id;
                         },

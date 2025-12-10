@@ -168,7 +168,7 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                         return SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Row(
-                            children: homeController.groups.map((group) {
+                            children: homeController.usedGroups.map((group) {
                               return Padding(
                                 padding: const EdgeInsets.only(right: 12),
                                 child: Row(
@@ -443,7 +443,7 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                ...homeController.groups.map(
+                                ...homeController.usedGroups.map(
                                   (group) => InkWell(
                                     onTap: () {
                                       controller.selectGroup(group.id);

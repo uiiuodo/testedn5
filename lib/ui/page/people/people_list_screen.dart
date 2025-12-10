@@ -99,7 +99,7 @@ class _PeopleListScreenState extends State<PeopleListScreen> {
                             showGroupDropdown(
                               context,
                               position: position,
-                              groups: controller.groups,
+                              groups: controller.usedGroups,
                               onGroupSelected: (group) {
                                 controller.selectGroup(group.id);
                                 setState(() {
@@ -196,7 +196,7 @@ class _PeopleListScreenState extends State<PeopleListScreen> {
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Row(
-                      children: controller.groups.map((group) {
+                      children: controller.usedGroups.map((group) {
                         return Padding(
                           padding: const EdgeInsets.only(right: 16),
                           child: Row(

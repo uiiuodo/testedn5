@@ -27,6 +27,11 @@ class HomeController extends GetxController {
     }).toList();
   }
 
+  List<Group> get usedGroups {
+    final usedIds = people.map((p) => p.groupId).toSet();
+    return groups.where((g) => usedIds.contains(g.id)).toList();
+  }
+
   void selectGroup(String groupId) {
     selectedGroupId.value = groupId;
   }
