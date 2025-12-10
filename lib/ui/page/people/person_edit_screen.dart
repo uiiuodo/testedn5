@@ -368,28 +368,11 @@ class PersonEditScreen extends StatelessWidget {
               ),
 
               // Add Custom Field Button
-              GestureDetector(
+              _buildAddButton(
+                label: '기본 정보 추가',
                 onTap: () {
                   _showAddCustomFieldDialog(context, controller);
                 },
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: const Color(0xFFEBEBEB)),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '+ 기본 정보 추가',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
               ),
               const SizedBox(height: 40),
 
@@ -417,7 +400,7 @@ class PersonEditScreen extends StatelessWidget {
                   ),
                   GestureDetector(
                     onTap: () {
-                      controller.isAddingAnniversary.toggle();
+                      controller.addEmptyAnniversary();
                     },
                     child: const Icon(
                       Icons.add,
@@ -429,172 +412,6 @@ class PersonEditScreen extends StatelessWidget {
               ),
               const SizedBox(height: 10),
 
-              // Inline Add Anniversary
-              Obx(() {
-                if (controller.isAddingAnniversary.value) {
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF5F5F5),
-                      borderRadius: BorderRadius.circular(5),
-                      border: Border.all(color: const Color(0xFFDEDEDE)),
-                    ),
-                    child: Column(
-                      children: [
-                        // Year Toggle
-                        Obx(() {
-                          final hasYear =
-                              controller.newAnniversaryHasYear.value;
-                          return Row(
-                            children: [
-                              GestureDetector(
-                                onTap: () =>
-                                    controller.newAnniversaryHasYear.value =
-                                        true,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: hasYear
-                                        ? AppColors.primary
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(
-                                      color: hasYear
-                                          ? AppColors.primary
-                                          : const Color(0xFFDEDEDE),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    '연도 포함',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: hasYear
-                                          ? Colors.white
-                                          : const Color(0xFF999999),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              GestureDetector(
-                                onTap: () =>
-                                    controller.newAnniversaryHasYear.value =
-                                        false,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: !hasYear
-                                        ? AppColors.primary
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(
-                                      color: !hasYear
-                                          ? AppColors.primary
-                                          : const Color(0xFFDEDEDE),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    '연도 없음',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: !hasYear
-                                          ? Colors.white
-                                          : const Color(0xFF999999),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          );
-                        }),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller:
-                                    controller.newAnniversaryTitleController,
-                                decoration: const InputDecoration(
-                                  hintText: '기념일 이름',
-                                  isDense: true,
-                                  contentPadding: EdgeInsets.symmetric(
-                                    vertical: 8,
-                                  ),
-                                  border: InputBorder.none,
-                                ),
-                                style: const TextStyle(fontSize: 13),
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () async {
-                                final date = await showDatePicker(
-                                  context: context,
-                                  initialDate:
-                                      controller.newAnniversaryDate.value,
-                                  firstDate: DateTime(1900),
-                                  lastDate: DateTime(2100),
-                                );
-                                if (date != null) {
-                                  controller.newAnniversaryDate.value = date;
-                                }
-                              },
-                              child: Obx(() {
-                                final date =
-                                    controller.newAnniversaryDate.value;
-                                final hasYear =
-                                    controller.newAnniversaryHasYear.value;
-                                return Text(
-                                  hasYear
-                                      ? DateFormat('yyyy-MM-dd').format(date)
-                                      : DateFormat('MM-dd').format(date),
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF4A4A4A),
-                                  ),
-                                );
-                              }),
-                            ),
-                          ],
-                        ),
-                        const Divider(height: 1),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {
-                              if (controller
-                                  .newAnniversaryTitleController
-                                  .text
-                                  .isNotEmpty) {
-                                controller.addAnniversary(
-                                  controller.newAnniversaryTitleController.text,
-                                  controller.newAnniversaryDate.value,
-                                  controller.newAnniversaryHasYear.value,
-                                );
-                                controller.newAnniversaryTitleController
-                                    .clear();
-                                controller.isAddingAnniversary.value = false;
-                              }
-                            },
-                            child: const Text(
-                              '추가',
-                              style: TextStyle(fontSize: 12),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
-              }),
-
               Obx(
                 () => Column(
                   children: controller.anniversaries.asMap().entries.map((
@@ -604,233 +421,157 @@ class PersonEditScreen extends StatelessWidget {
                     final anniv = entry.value;
                     return Container(
                       margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF5F5F5),
-                        borderRadius: BorderRadius.circular(5),
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Row(
+                      child: Column(
                         children: [
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: () async {
-                                final titleController = TextEditingController(
-                                  text: anniv.title,
-                                );
-                                DateTime selectedDate = anniv.date;
-                                bool selectedHasYear = anniv.hasYear;
-
-                                await showDialog(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('기념일 수정'),
-                                    content: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        // Year Toggle in Dialog
-                                        StatefulBuilder(
-                                          builder: (context, setState) {
-                                            return Row(
-                                              children: [
-                                                GestureDetector(
-                                                  onTap: () => setState(
-                                                    () =>
-                                                        selectedHasYear = true,
-                                                  ),
-                                                  child: Container(
-                                                    padding:
-                                                        const EdgeInsets.symmetric(
-                                                          horizontal: 8,
-                                                          vertical: 4,
-                                                        ),
-                                                    decoration: BoxDecoration(
-                                                      color: selectedHasYear
-                                                          ? AppColors.primary
-                                                          : Colors.transparent,
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            4,
-                                                          ),
-                                                      border: Border.all(
-                                                        color: selectedHasYear
-                                                            ? AppColors.primary
-                                                            : const Color(
-                                                                0xFFDEDEDE,
-                                                              ),
-                                                      ),
-                                                    ),
-                                                    child: Text(
-                                                      '연도 포함',
-                                                      style: TextStyle(
-                                                        fontSize: 11,
-                                                        color: selectedHasYear
-                                                            ? Colors.white
-                                                            : const Color(
-                                                                0xFF999999,
-                                                              ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 8),
-                                                GestureDetector(
-                                                  onTap: () => setState(
-                                                    () =>
-                                                        selectedHasYear = false,
-                                                  ),
-                                                  child: Container(
-                                                    padding:
-                                                        const EdgeInsets.symmetric(
-                                                          horizontal: 8,
-                                                          vertical: 4,
-                                                        ),
-                                                    decoration: BoxDecoration(
-                                                      color: !selectedHasYear
-                                                          ? AppColors.primary
-                                                          : Colors.transparent,
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            4,
-                                                          ),
-                                                      border: Border.all(
-                                                        color: !selectedHasYear
-                                                            ? AppColors.primary
-                                                            : const Color(
-                                                                0xFFDEDEDE,
-                                                              ),
-                                                      ),
-                                                    ),
-                                                    child: Text(
-                                                      '연도 없음',
-                                                      style: TextStyle(
-                                                        fontSize: 11,
-                                                        color: !selectedHasYear
-                                                            ? Colors.white
-                                                            : const Color(
-                                                                0xFF999999,
-                                                              ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          },
-                                        ),
-                                        const SizedBox(height: 16),
-                                        TextField(
-                                          controller: titleController,
-                                          decoration: const InputDecoration(
-                                            labelText: '기념일 이름',
-                                          ),
-                                        ),
-                                        const SizedBox(height: 16),
-                                        StatefulBuilder(
-                                          builder: (context, setState) {
-                                            return GestureDetector(
-                                              onTap: () async {
-                                                final date =
-                                                    await showDatePicker(
-                                                      context: context,
-                                                      initialDate: selectedDate,
-                                                      firstDate: DateTime(1900),
-                                                      lastDate: DateTime(2100),
-                                                    );
-                                                if (date != null) {
-                                                  setState(() {
-                                                    selectedDate = date;
-                                                  });
-                                                }
-                                              },
-                                              child: Row(
-                                                children: [
-                                                  const Icon(
-                                                    Icons.calendar_today,
-                                                    size: 16,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Text(
-                                                    selectedHasYear
-                                                        ? DateFormat(
-                                                            'yyyy-MM-dd',
-                                                          ).format(selectedDate)
-                                                        : DateFormat(
-                                                            'MM-dd',
-                                                          ).format(
-                                                            selectedDate,
-                                                          ),
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Get.back(),
-                                        child: const Text('취소'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          if (titleController.text.isNotEmpty) {
-                                            controller.updateAnniversary(
-                                              index,
-                                              titleController.text,
-                                              selectedDate,
-                                              selectedHasYear,
-                                            );
-                                            Get.back();
-                                          }
-                                        },
-                                        child: const Text('저장'),
-                                      ),
-                                    ],
+                          // Year Toggle
+                          Row(
+                            children: [
+                              GestureDetector(
+                                onTap: () => controller.updateAnniversary(
+                                  index,
+                                  anniv.title,
+                                  anniv.date,
+                                  true,
+                                ),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
                                   ),
-                                );
-                              },
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    anniv.title,
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      color: Color(0xFF2A2A2A),
+                                  decoration: BoxDecoration(
+                                    color: anniv.hasYear
+                                        ? AppColors.primary
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                      color: anniv.hasYear
+                                          ? AppColors.primary
+                                          : const Color(0xFFDEDEDE),
                                     ),
                                   ),
-                                  Text(
-                                    anniv.hasYear
-                                        ? DateFormat(
-                                            'yyyy-MM-dd',
-                                          ).format(anniv.date)
-                                        : DateFormat(
-                                            'MM-dd',
-                                          ).format(anniv.date),
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      color: Color(0xFF2A2A2A),
+                                  child: Text(
+                                    '연도 포함',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: anniv.hasYear
+                                          ? Colors.white
+                                          : const Color(0xFF999999),
                                     ),
                                   ),
-                                ],
+                                ),
                               ),
-                            ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () => controller.updateAnniversary(
+                                  index,
+                                  anniv.title,
+                                  anniv.date,
+                                  false,
+                                ),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: !anniv.hasYear
+                                        ? AppColors.primary
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                      color: !anniv.hasYear
+                                          ? AppColors.primary
+                                          : const Color(0xFFDEDEDE),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '연도 없음',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: !anniv.hasYear
+                                          ? Colors.white
+                                          : const Color(0xFF999999),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const Spacer(),
+                              GestureDetector(
+                                onTap: () {
+                                  controller.removeAnniversary(index);
+                                },
+                                child: const Icon(
+                                  Icons.close,
+                                  size: 16,
+                                  color: Color(0xFF9D9D9D),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: () {
-                              controller.removeAnniversary(index);
-                            },
-                            child: const Icon(
-                              Icons.close,
-                              size: 16,
-                              color: Color(0xFF9D9D9D),
-                            ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  initialValue: anniv.title,
+                                  onChanged: (val) {
+                                    controller.updateAnniversary(
+                                      index,
+                                      val,
+                                      anniv.date,
+                                      anniv.hasYear,
+                                    );
+                                  },
+                                  decoration: const InputDecoration(
+                                    hintText: '기념일 이름',
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.symmetric(
+                                      vertical: 8,
+                                    ),
+                                    border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    errorBorder: InputBorder.none,
+                                    focusedErrorBorder: InputBorder.none,
+                                  ),
+                                  style: const TextStyle(fontSize: 13),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () async {
+                                  final date = await showDatePicker(
+                                    context: context,
+                                    initialDate: anniv.date,
+                                    firstDate: DateTime(1900),
+                                    lastDate: DateTime(2100),
+                                  );
+                                  if (date != null) {
+                                    controller.updateAnniversary(
+                                      index,
+                                      anniv.title,
+                                      date,
+                                      anniv.hasYear,
+                                    );
+                                  }
+                                },
+                                child: Text(
+                                  anniv.hasYear
+                                      ? DateFormat(
+                                          'yyyy-MM-dd',
+                                        ).format(anniv.date)
+                                      : DateFormat('MM-dd').format(anniv.date),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF4A4A4A),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -860,9 +601,7 @@ class PersonEditScreen extends StatelessWidget {
                   ),
                   GestureDetector(
                     onTap: () {
-                      if (controller.newMemoController.text.isNotEmpty) {
-                        controller.addMemo(controller.newMemoController.text);
-                      }
+                      controller.addEmptyMemo();
                     },
                     child: const Icon(
                       Icons.add,
@@ -886,8 +625,8 @@ class PersonEditScreen extends StatelessWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF5F5F5),
-                        borderRadius: BorderRadius.circular(5),
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -905,8 +644,13 @@ class PersonEditScreen extends StatelessWidget {
                               ),
                               decoration: const InputDecoration(
                                 border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                errorBorder: InputBorder.none,
+                                focusedErrorBorder: InputBorder.none,
                                 isDense: true,
                                 contentPadding: EdgeInsets.zero,
+                                hintText: '내용 입력하기',
                               ),
                             ),
                           ),
@@ -924,76 +668,6 @@ class PersonEditScreen extends StatelessWidget {
                       ),
                     );
                   }).toList(),
-                ),
-              ),
-              // Add Memo Input (Card Style)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF5F5F5),
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: controller.newMemoController,
-                        onSubmitted: (value) {
-                          if (value.isNotEmpty) {
-                            controller.addMemo(value);
-                          }
-                        },
-                        maxLines: 3,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF2A2A2A),
-                        ),
-                        decoration: const InputDecoration(
-                          hintText: '내용 입력하기',
-                          hintStyle: TextStyle(
-                            color: Color(0xFFC2C2C2),
-                            fontSize: 12,
-                          ),
-                          border: InputBorder.none,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () {
-                        if (controller.newMemoController.text.isNotEmpty) {
-                          controller.addMemo(controller.newMemoController.text);
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF414141),
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: Row(
-                          children: const [
-                            Icon(Icons.add, size: 14, color: Colors.white),
-                            SizedBox(width: 4),
-                            Text(
-                              '추가',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ),
               const SizedBox(height: 30),
@@ -1151,39 +825,11 @@ class PersonEditScreen extends StatelessWidget {
                 ),
               ),
               // Add Preference Button
-              GestureDetector(
+              _buildAddButton(
+                label: '취향 기록 추가하기',
                 onTap: () {
                   controller.addPreference('', '', '');
                 },
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(5),
-                    border: Border.all(color: const Color(0xFFEBEBEB)),
-                  ),
-                  child: Center(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(
-                          Icons.add_circle_outline,
-                          size: 16,
-                          color: Color(0xFF9D9D9D),
-                        ),
-                        SizedBox(width: 6),
-                        Text(
-                          '취향 기록 추가하기',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF9D9D9D),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
               ),
               const SizedBox(height: 40),
             ],
@@ -1382,6 +1028,38 @@ class PersonEditScreen extends StatelessWidget {
           style: TextStyle(
             color: isSelected ? Colors.white : Colors.black,
             fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddButton({required String label, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(5),
+          border: Border.all(color: const Color(0xFFEBEBEB)),
+        ),
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.add_circle_outline,
+                size: 16,
+                color: Color(0xFF9D9D9D),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: const TextStyle(fontSize: 12, color: Color(0xFF9D9D9D)),
+              ),
+            ],
           ),
         ),
       ),

@@ -252,6 +252,19 @@ class PersonEditController extends GetxController {
     );
   }
 
+  void addEmptyAnniversary() {
+    anniversaries.add(
+      Anniversary(
+        id: const Uuid().v4(),
+        personId: personId ?? '',
+        title: '',
+        date: DateTime.now(),
+        type: AnniversaryType.etc,
+        hasYear: true,
+      ),
+    );
+  }
+
   void removeAnniversary(int index) {
     anniversaries.removeAt(index);
   }
@@ -279,6 +292,17 @@ class PersonEditController extends GetxController {
       ),
     );
     newMemoController.clear();
+  }
+
+  void addEmptyMemo() {
+    memos.add(
+      Memo(
+        id: const Uuid().v4(),
+        personId: personId ?? '',
+        createdAt: DateTime.now(),
+        content: '',
+      ),
+    );
   }
 
   void removeMemo(int index) {
