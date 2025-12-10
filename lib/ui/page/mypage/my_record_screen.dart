@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import 'my_record_controller.dart';
+import '../people/preference_add_bottom_sheet.dart';
+import '../../widgets/common/anniversary_bottom_sheet.dart';
+import '../../widgets/common/memo_bottom_sheet.dart';
+import '../../../data/model/anniversary.dart';
+import '../../../data/model/memo.dart';
 
 class MyRecordScreen extends StatelessWidget {
   const MyRecordScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.put(MyRecordController());
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -16,112 +25,221 @@ class MyRecordScreen extends StatelessWidget {
           onPressed: () => Get.back(),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined, color: Colors.black),
-            onPressed: () {
-              // TODO: Implement edit functionality
-            },
+          Obx(
+            () => IconButton(
+              icon: Icon(
+                controller.isEditMode.value ? Icons.check : Icons.edit_outlined,
+                color: Colors.black,
+              ),
+              onPressed: controller.toggleEditMode,
+            ),
           ),
           const SizedBox(width: 8),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Title
-            const Text(
-              '나에 대한 기록',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF2A2A2A),
+      body: Obx(() {
+        final person = controller.person.value;
+        if (person == null) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Title
+              const Text(
+                '나에 대한 기록',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF2A2A2A),
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-            // Basic Info
-            Row(
-              children: const [
-                Text(
-                  '생년월일',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF919191),
+              // Basic Info (BirthDate)
+              Row(
+                children: [
+                  const Text(
+                    '생년월일',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF919191),
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  GestureDetector(
+                    onTap: controller.isEditMode.value
+                        ? () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: person.birthDate ?? DateTime.now(),
+                              firstDate: DateTime(1900),
+                              lastDate: DateTime.now(),
+                            );
+                            if (date != null) {
+                              controller.updateBirthDate(date);
+                            }
+                          }
+                        : null,
+                    child: Container(
+                      padding: controller.isEditMode.value
+                          ? const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            )
+                          : EdgeInsets.zero,
+                      decoration: controller.isEditMode.value
+                          ? BoxDecoration(
+                              color: const Color(0xFFF5F5F5),
+                              borderRadius: BorderRadius.circular(5),
+                            )
+                          : null,
+                      child: Text(
+                        person.birthDate != null
+                            ? '${DateFormat('yyyy.MM.dd').format(person.birthDate!)} ${_calculateAge(person.birthDate!)}'
+                            : '입력해주세요',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w300,
+                          color: Color(0xFF2A2A2A),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              const Divider(height: 1, color: Color(0xFFDEDEDE)),
+              const SizedBox(height: 24),
+
+              // Anniversaries
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildSectionHeader(
+                    '기념일',
+                    iconColor: const Color(0xFFB0B0B0),
+                  ),
+                  if (controller.isEditMode.value)
+                    GestureDetector(
+                      onTap: () =>
+                          _showAnniversaryBottomSheet(context, controller),
+                      child: const Icon(
+                        Icons.add,
+                        size: 20,
+                        color: Color(0xFF9D9D9D),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ...person.anniversaries.map(
+                (a) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: GestureDetector(
+                    onTap: controller.isEditMode.value
+                        ? () => _showAnniversaryBottomSheet(
+                            context,
+                            controller,
+                            anniversary: a,
+                          )
+                        : null,
+                    child: _buildAnniversaryCard(
+                      a.title,
+                      a.hasYear
+                          ? DateFormat('yyyy년 M월 d일').format(a.date)
+                          : DateFormat('M월 d일').format(a.date),
+                      isEditing: controller.isEditMode.value,
+                    ),
                   ),
                 ),
-                SizedBox(width: 20),
-                Text(
-                  '1996.08.30',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w300,
-                    color: Color(0xFF2A2A2A),
+              ),
+              const SizedBox(height: 30),
+
+              // Memos
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildSectionHeader('메모', iconColor: const Color(0xFFB0B0B0)),
+                  if (controller.isEditMode.value)
+                    GestureDetector(
+                      onTap: () => _showMemoBottomSheet(context, controller),
+                      child: const Icon(
+                        Icons.add,
+                        size: 20,
+                        color: Color(0xFF9D9D9D),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ...person.memos.map(
+                (m) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: GestureDetector(
+                    onTap: controller.isEditMode.value
+                        ? () =>
+                              _showMemoBottomSheet(context, controller, memo: m)
+                        : null,
+                    child: _buildMemoCard(
+                      m.content,
+                      isEditing: controller.isEditMode.value,
+                    ),
                   ),
                 ),
-                SizedBox(width: 8),
-                Text(
-                  '(30세, 만 29세)',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w300,
-                    color: Color(0xFF2A2A2A),
+              ),
+              const SizedBox(height: 30),
+
+              // Preferences
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildSectionHeader(
+                    '취향 기록',
+                    iconColor: const Color(0xFFB0B0B0),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            const Divider(height: 1, color: Color(0xFFDEDEDE)),
-            const SizedBox(height: 24),
+                  if (controller.isEditMode.value)
+                    GestureDetector(
+                      onTap: () => _showPreferenceBottomSheet(
+                        context,
+                        controller,
+                        category: '',
+                        isLike: true,
+                        initialContents: [],
+                      ),
+                      child: const Icon(
+                        Icons.add,
+                        size: 20,
+                        color: Color(0xFF9D9D9D),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ..._buildPreferenceList(context, controller),
 
-            // Anniversaries
-            _buildSectionHeader('기념일', iconColor: const Color(0xFFB0B0B0)),
-            const SizedBox(height: 12),
-            _buildAnniversaryCard('생일', '8월 30일'),
-            const SizedBox(height: 8),
-            _buildAnniversaryCard('축일', '8월 23일 → 로사 축일'),
-            const SizedBox(height: 30),
-
-            // Memos
-            _buildSectionHeader('메모', iconColor: const Color(0xFFB0B0B0)),
-            const SizedBox(height: 12),
-            _buildMemoCard('표정 때문에 상대가 눈치보는 경우가 종종 발생함\n이점 인지하고 있기'),
-            const SizedBox(height: 8),
-            _buildMemoCard('5가지 사랑의 언어 테스트\n1위 함께하는 시간, 봉사 나옴'),
-            const SizedBox(height: 8),
-            _buildMemoCard(
-              '최근에 알았는데 피곤하면 텐션이 올라간다\n이때 과장된 행동이나 리액션을 많이 하게 되는 것 같으니 ..\n아주 피곤한 날에는 .. 어디 가지말고 집가서 자는 게 좋을 거 같음 ㅎ',
-            ),
-            const SizedBox(height: 30),
-
-            // Preferences
-            _buildSectionHeader('취향 기록', iconColor: const Color(0xFFB0B0B0)),
-            const SizedBox(height: 12),
-
-            // Book Preference
-            _buildPreferenceAccordion(
-              title: '책',
-              likes: '추리소설, SF 판타지, 장편 시리즈 (3권 까지는 괜찮음), 시',
-              dislikes: '실용서적/자기계발서, 에세이, 고전문학',
-            ),
-            const SizedBox(height: 12),
-
-            // Movie Preference
-            _buildPreferenceAccordion(
-              title: '영화',
-              likes:
-                  '웨스 앤더슨 감독 영화, 김종관 감독 영화\n영화 아멜리에, 영화 죽은 시인의 사회(동아리), 영화 에에올, 영화 미드나잇 인 파리, 영화 라이언 일병 구하기, 영화 내 사랑\n장르 느와르, 추리, 전쟁영화, 현실적인 영화',
-              dislikes:
-                  '히어로물, 페이크 다큐 형식 영화, 점프 스케어 공포물, 로맨스물, 너무 비현실적인 동화같은 영화 안 좋아함',
-            ),
-
-            const SizedBox(height: 40),
-          ],
-        ),
-      ),
+              const SizedBox(height: 40),
+            ],
+          ),
+        );
+      }),
     );
+  }
+
+  String _calculateAge(DateTime birthDate) {
+    final now = DateTime.now();
+    int age = now.year - birthDate.year;
+    int manAge = age;
+    if (now.month < birthDate.month ||
+        (now.month == birthDate.month && now.day < birthDate.day)) {
+      manAge--;
+    }
+    int koreanAge = age + 1;
+    return '(${koreanAge}세, 만 ${manAge}세)';
   }
 
   Widget _buildSectionHeader(String title, {required Color iconColor}) {
@@ -141,13 +259,18 @@ class MyRecordScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAnniversaryCard(String title, String date) {
+  Widget _buildAnniversaryCard(
+    String title,
+    String date, {
+    bool isEditing = false,
+  }) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(5),
+        border: isEditing ? Border.all(color: const Color(0xFFDEDEDE)) : null,
       ),
       child: Row(
         children: [
@@ -167,35 +290,98 @@ class MyRecordScreen extends StatelessWidget {
               color: Color(0xFF2A2A2A),
             ),
           ),
+          if (isEditing) ...[
+            const Spacer(),
+            const Icon(Icons.edit, size: 14, color: Color(0xFF9D9D9D)),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildMemoCard(String content) {
+  Widget _buildMemoCard(String content, {bool isEditing = false}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(5),
+        border: isEditing ? Border.all(color: const Color(0xFFDEDEDE)) : null,
       ),
-      child: Text(
-        content,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w300,
-          color: Color(0xFF2A2A2A),
-          height: 1.3,
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            content,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w300,
+              color: Color(0xFF2A2A2A),
+              height: 1.3,
+            ),
+          ),
+          if (isEditing) ...[
+            const SizedBox(height: 4),
+            const Align(
+              alignment: Alignment.centerRight,
+              child: Icon(Icons.edit, size: 14, color: Color(0xFF9D9D9D)),
+            ),
+          ],
+        ],
       ),
     );
   }
 
+  List<Widget> _buildPreferenceList(
+    BuildContext context,
+    MyRecordController controller,
+  ) {
+    final person = controller.person.value!;
+    final grouped = <String, List<dynamic>>{};
+    for (var p in person.preferences) {
+      if (!grouped.containsKey(p.title)) grouped[p.title] = [];
+      grouped[p.title]!.add(p);
+    }
+
+    return grouped.entries.map((entry) {
+      final category = entry.key;
+      final prefs = entry.value;
+
+      final likesList = prefs
+          .where((p) => p.like != null)
+          .map((p) => p.like!)
+          .toList();
+      final dislikesList = prefs
+          .where((p) => p.dislike != null)
+          .map((p) => p.dislike!)
+          .toList();
+
+      final likesStr = likesList.join(', ');
+      final dislikesStr = dislikesList.join(', ');
+
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: _buildPreferenceAccordion(
+          context: context,
+          controller: controller,
+          title: category,
+          likes: likesStr,
+          dislikes: dislikesStr,
+          likesList: likesList.cast<String>(),
+          dislikesList: dislikesList.cast<String>(),
+        ),
+      );
+    }).toList();
+  }
+
   Widget _buildPreferenceAccordion({
+    required BuildContext context,
+    required MyRecordController controller,
     required String title,
     required String likes,
     required String dislikes,
+    required List<String> likesList,
+    required List<String> dislikesList,
   }) {
     return Theme(
       data: Theme.of(Get.context!).copyWith(dividerColor: Colors.transparent),
@@ -218,70 +404,173 @@ class MyRecordScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Likes
-              const Text(
-                '선호',
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w400,
-                  color: Color(0xFF00A6FF),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(5),
-                  border: Border.all(
-                    color: const Color(0xFF00A6FF),
-                    width: 0.5,
+              if (likes.isNotEmpty) ...[
+                const Text(
+                  '선호',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF00A6FF),
                   ),
                 ),
-                child: Text(
-                  likes,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w300,
-                    color: Color(0xFF464646),
-                    height: 1.4,
+                const SizedBox(height: 4),
+                GestureDetector(
+                  onTap: controller.isEditMode.value
+                      ? () => _showPreferenceBottomSheet(
+                          context,
+                          controller,
+                          category: title,
+                          isLike: true,
+                          initialContents: likesList,
+                        )
+                      : null,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: const Color(0xFF2F80ED),
+                        width: 1.0,
+                      ),
+                    ),
+                    child: Text(
+                      likes,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w300,
+                        color: Color(0xFF464646),
+                        height: 1.4,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 8),
+                const SizedBox(height: 8),
+              ],
 
               // Dislikes
-              const Text(
-                '비선호',
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w400,
-                  color: Color(0xFF6F6F6F),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(5),
-                  border: Border.all(
-                    color: const Color(0xFF979797),
-                    width: 0.5,
+              if (dislikes.isNotEmpty) ...[
+                const Text(
+                  '비선호',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF6F6F6F),
                   ),
                 ),
-                child: Text(
-                  dislikes,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w300,
-                    color: Color(0xFF464646),
-                    height: 1.4,
+                const SizedBox(height: 4),
+                GestureDetector(
+                  onTap: controller.isEditMode.value
+                      ? () => _showPreferenceBottomSheet(
+                          context,
+                          controller,
+                          category: title,
+                          isLike: false,
+                          initialContents: dislikesList,
+                        )
+                      : null,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: const Color(0xFF333333),
+                        width: 1.0,
+                      ),
+                    ),
+                    child: Text(
+                      dislikes,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w300,
+                        color: Color(0xFF464646),
+                        height: 1.4,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  // --- Dialogs / BottomSheets ---
+
+  void _showAnniversaryBottomSheet(
+    BuildContext context,
+    MyRecordController controller, {
+    Anniversary? anniversary,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AnniversaryBottomSheet(
+        initialTitle: anniversary?.title,
+        initialDate: anniversary?.date,
+        initialHasYear: anniversary?.hasYear ?? true,
+        onSave: (title, date, hasYear) {
+          if (anniversary == null) {
+            controller.addAnniversary(title, date, hasYear);
+          } else {
+            controller.updateAnniversary(anniversary.id, title, date, hasYear);
+          }
+        },
+        onDelete: anniversary != null
+            ? () => controller.deleteAnniversary(anniversary.id)
+            : null,
+      ),
+    );
+  }
+
+  void _showMemoBottomSheet(
+    BuildContext context,
+    MyRecordController controller, {
+    Memo? memo,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => MemoBottomSheet(
+        initialContent: memo?.content,
+        onSave: (content) {
+          if (memo == null) {
+            controller.addMemo(content);
+          } else {
+            controller.updateMemo(memo.id, content);
+          }
+        },
+        onDelete: memo != null ? () => controller.deleteMemo(memo.id) : null,
+      ),
+    );
+  }
+
+  void _showPreferenceBottomSheet(
+    BuildContext context,
+    MyRecordController controller, {
+    required String category,
+    required bool isLike,
+    required List<String> initialContents,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => PreferenceAddBottomSheet(
+        initialCategory: category,
+        initialIsLike: isLike,
+        initialContents: initialContents,
+        onAdd: (cat, like, contents) {
+          controller.updatePreference(cat, like, contents);
+          Get.back();
+        },
       ),
     );
   }
