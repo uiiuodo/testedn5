@@ -305,6 +305,7 @@ class _PeopleListScreenState extends State<PeopleListScreen> {
                         },
                         onReorder: (oldIndex, newIndex) {
                           controller.reorderPeople(oldIndex, newIndex);
+                          controller.isReorderMode.value = false;
                         },
                         itemBuilder: (context, index) {
                           final person = people[index];
@@ -321,10 +322,16 @@ class _PeopleListScreenState extends State<PeopleListScreen> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                ReorderableDelayedDragStartListener(
-                                  index: index,
+                                GestureDetector(
+                                  onLongPress: () {
+                                    controller.isReorderMode.value = true;
+                                  },
                                   child: InkWell(
                                     onTap: () {
+                                      // If in reorder mode, maybe just exit mode?
+                                      // Or navigate? User said "existing behavior intact".
+                                      // Let's navigate and also turn off mode.
+                                      controller.isReorderMode.value = false;
                                       Get.to(
                                         () => PersonDetailScreen(
                                           personId: person.id,
@@ -370,17 +377,26 @@ class _PeopleListScreenState extends State<PeopleListScreen> {
                                             ),
                                           ),
                                           // Drag Handle
-                                          ReorderableDragStartListener(
-                                            index: index,
-                                            child: const Padding(
-                                              padding: EdgeInsets.all(8.0),
-                                              child: Icon(
-                                                Icons.menu, // Hamburger icon
-                                                color: AppColors.textTertiary,
-                                                size: 20,
+                                          Obx(() {
+                                            return Visibility(
+                                              visible: controller
+                                                  .isReorderMode
+                                                  .value,
+                                              child: ReorderableDragStartListener(
+                                                index: index,
+                                                child: const Padding(
+                                                  padding: EdgeInsets.all(8.0),
+                                                  child: Icon(
+                                                    Icons
+                                                        .menu, // Hamburger icon
+                                                    color:
+                                                        AppColors.textTertiary,
+                                                    size: 20,
+                                                  ),
+                                                ),
                                               ),
-                                            ),
-                                          ),
+                                            );
+                                          }),
                                         ],
                                       ),
                                     ),

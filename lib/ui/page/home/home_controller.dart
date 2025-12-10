@@ -14,6 +14,7 @@ class HomeController extends GetxController {
   final RxString selectedGroupId = 'all'.obs;
   final RxString searchQuery = ''.obs;
   final RxInt tabIndex = 0.obs;
+  final RxBool isReorderMode = false.obs;
 
   List<Person> get filteredPeople {
     // Return people in their current order (which is sorted by _sortPeople)
