@@ -129,33 +129,28 @@ class _PreferenceAddBottomSheetState extends State<PreferenceAddBottomSheet> {
                     });
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     decoration: BoxDecoration(
                       color: _isLike == true
-                          ? AppColors.primary.withOpacity(0.1)
-                          : AppColors.surface,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: _isLike == true
-                            ? AppColors.primary
-                            : Colors.transparent,
-                      ),
+                          ? const Color(0xFF4DA3FF) // Sky Blue
+                          : const Color(0xFFF5F5F5), // Light Gray
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       '선호',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: _isLike == true
-                            ? AppColors.primary
-                            : const Color(0xFF999999),
+                            ? const Color(0xFF003366) // Dark Blue
+                            : const Color(0xFF9E9E9E),
                       ),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: GestureDetector(
                   onTap: () {
@@ -164,27 +159,22 @@ class _PreferenceAddBottomSheetState extends State<PreferenceAddBottomSheet> {
                     });
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     decoration: BoxDecoration(
                       color: _isLike == false
-                          ? const Color(0xFFFFEBEB) // Light Red
-                          : AppColors.surface,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: _isLike == false
-                            ? const Color(0xFFFF5252) // Red
-                            : Colors.transparent,
-                      ),
+                          ? const Color(0xFF424242) // Dark Gray
+                          : const Color(0xFFF5F5F5),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       '비선호',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: _isLike == false
-                            ? const Color(0xFFFF5252)
-                            : const Color(0xFF999999),
+                            ? Colors.white
+                            : const Color(0xFF9E9E9E),
                       ),
                     ),
                   ),
@@ -196,8 +186,8 @@ class _PreferenceAddBottomSheetState extends State<PreferenceAddBottomSheet> {
 
           // Content Input
           Container(
-            height: 150,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            height: 180,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             decoration: BoxDecoration(
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(5),
@@ -207,28 +197,33 @@ class _PreferenceAddBottomSheetState extends State<PreferenceAddBottomSheet> {
               onChanged: _handleContentChange,
               maxLines: null,
               style: const TextStyle(
-                fontSize: 14,
-                height: 1.5,
+                fontSize: 16,
+                height: 1.6,
                 color: AppColors.textPrimary,
               ),
+              cursorColor: AppColors.textPrimary,
               decoration: const InputDecoration(
                 border: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
                 hintText: '내용 입력하기',
                 hintStyle: TextStyle(color: Color(0xFF999999)),
                 contentPadding: EdgeInsets.zero,
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 30),
 
           // Add Button
           SizedBox(
             width: double.infinity,
-            height: 50,
+            height: 56,
             child: ElevatedButton(
               onPressed: _submit,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: const Color(0xFF2A2A2A), // Black
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -237,7 +232,7 @@ class _PreferenceAddBottomSheetState extends State<PreferenceAddBottomSheet> {
               child: const Text(
                 '추가하기',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
