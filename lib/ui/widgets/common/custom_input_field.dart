@@ -62,6 +62,7 @@ class CustomInputField extends StatelessWidget {
               horizontal: 16,
               vertical: 10,
             ),
+            isCollapsed: true,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(5),
               borderSide: BorderSide.none,

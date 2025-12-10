@@ -553,9 +553,7 @@ class PersonEditScreen extends StatelessWidget {
                                   decoration: const InputDecoration(
                                     hintText: '기념일 이름',
                                     isDense: true,
-                                    contentPadding: EdgeInsets.symmetric(
-                                      vertical: 8,
-                                    ),
+                                    contentPadding: EdgeInsets.zero,
                                     border: InputBorder.none,
                                     enabledBorder: InputBorder.none,
                                     focusedBorder: InputBorder.none,
