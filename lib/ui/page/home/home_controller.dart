@@ -49,6 +49,27 @@ class HomeController extends GetxController {
     fetchGroups();
   }
 
+  void updateGroup(String id, String newName) async {
+    final group = groups.firstWhereOrNull((g) => g.id == id);
+    if (group != null) {
+      final updatedGroup = Group(
+        id: group.id,
+        name: newName,
+        colorValue: group.colorValue,
+      );
+      await _groupRepository.updateGroup(updatedGroup);
+      fetchGroups();
+    }
+  }
+
+  void deleteGroup(String id) async {
+    await _groupRepository.deleteGroup(id);
+    fetchGroups();
+    if (selectedGroupId.value == id) {
+      selectedGroupId.value = 'all';
+    }
+  }
+
   @override
   void onInit() {
     super.onInit();

@@ -7,6 +7,7 @@ import '../../widgets/common/custom_app_bar.dart';
 import '../../widgets/common/custom_input_field.dart';
 import '../../widgets/common/group_add_bottom_sheet.dart';
 import '../../widgets/common/group_dropdown_menu.dart';
+import '../../widgets/common/group_management_bottom_sheet.dart';
 import 'person_edit_controller.dart';
 
 class PersonEditScreen extends StatelessWidget {
@@ -114,6 +115,22 @@ class PersonEditScreen extends StatelessWidget {
                               onAdd: (name, colorValue) {
                                 controller.addNewGroup(name, colorValue);
                                 Get.back(); // Close bottom sheet
+                              },
+                            ),
+                          );
+                        },
+                        onEditGroups: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (context) => GroupManagementBottomSheet(
+                              groups: controller.groups,
+                              onRename: (id, newName) {
+                                controller.updateGroup(id, newName);
+                              },
+                              onDelete: (id) {
+                                controller.deleteGroup(id);
                               },
                             ),
                           );

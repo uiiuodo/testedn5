@@ -9,6 +9,7 @@ Future<void> showGroupDropdown(
   required List<Group> groups,
   required Function(Group) onGroupSelected,
   required VoidCallback onAddGroup,
+  VoidCallback? onEditGroups,
 }) async {
   final result = await showMenu<dynamic>(
     context: context,
@@ -45,6 +46,17 @@ Future<void> showGroupDropdown(
           ),
         ),
       ),
+      PopupMenuItem<String>(
+        value: 'edit_group',
+        height: 36,
+        child: Text(
+          '그룹 편집하기',
+          style: AppTextStyles.body1.copyWith(
+            fontWeight: FontWeight.w300,
+            color: AppColors.primary,
+          ),
+        ),
+      ),
     ],
   );
 
@@ -53,6 +65,10 @@ Future<void> showGroupDropdown(
       onGroupSelected(result);
     } else if (result == 'add_group') {
       onAddGroup();
+    } else if (result == 'edit_group') {
+      if (onEditGroups != null) {
+        onEditGroups();
+      }
     }
   }
 }
