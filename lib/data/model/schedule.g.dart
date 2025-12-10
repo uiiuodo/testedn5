@@ -25,7 +25,7 @@ class ScheduleAdapter extends TypeAdapter<Schedule> {
       type: fields[5] as ScheduleType,
       personIds: (fields[6] as List).cast<String>(),
       groupId: fields[7] as String?,
-      isPlanned: fields[8] as bool? ?? false,
+      isPlanned: fields[8] as bool,
     );
   }
 

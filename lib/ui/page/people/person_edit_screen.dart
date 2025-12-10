@@ -442,6 +442,79 @@ class PersonEditScreen extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
+                        // Year Toggle
+                        Obx(() {
+                          final hasYear =
+                              controller.newAnniversaryHasYear.value;
+                          return Row(
+                            children: [
+                              GestureDetector(
+                                onTap: () =>
+                                    controller.newAnniversaryHasYear.value =
+                                        true,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: hasYear
+                                        ? AppColors.primary
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                      color: hasYear
+                                          ? AppColors.primary
+                                          : const Color(0xFFDEDEDE),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '연도 포함',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: hasYear
+                                          ? Colors.white
+                                          : const Color(0xFF999999),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () =>
+                                    controller.newAnniversaryHasYear.value =
+                                        false,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: !hasYear
+                                        ? AppColors.primary
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                      color: !hasYear
+                                          ? AppColors.primary
+                                          : const Color(0xFFDEDEDE),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '연도 없음',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: !hasYear
+                                          ? Colors.white
+                                          : const Color(0xFF999999),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        }),
+                        const SizedBox(height: 8),
                         Row(
                           children: [
                             Expanded(
@@ -472,17 +545,21 @@ class PersonEditScreen extends StatelessWidget {
                                   controller.newAnniversaryDate.value = date;
                                 }
                               },
-                              child: Obx(
-                                () => Text(
-                                  DateFormat(
-                                    'yyyy-MM-dd',
-                                  ).format(controller.newAnniversaryDate.value),
+                              child: Obx(() {
+                                final date =
+                                    controller.newAnniversaryDate.value;
+                                final hasYear =
+                                    controller.newAnniversaryHasYear.value;
+                                return Text(
+                                  hasYear
+                                      ? DateFormat('yyyy-MM-dd').format(date)
+                                      : DateFormat('MM-dd').format(date),
                                   style: const TextStyle(
                                     fontSize: 12,
                                     color: Color(0xFF4A4A4A),
                                   ),
-                                ),
-                              ),
+                                );
+                              }),
                             ),
                           ],
                         ),
@@ -498,6 +575,7 @@ class PersonEditScreen extends StatelessWidget {
                                 controller.addAnniversary(
                                   controller.newAnniversaryTitleController.text,
                                   controller.newAnniversaryDate.value,
+                                  controller.newAnniversaryHasYear.value,
                                 );
                                 controller.newAnniversaryTitleController
                                     .clear();
@@ -543,6 +621,7 @@ class PersonEditScreen extends StatelessWidget {
                                   text: anniv.title,
                                 );
                                 DateTime selectedDate = anniv.date;
+                                bool selectedHasYear = anniv.hasYear;
 
                                 await showDialog(
                                   context: context,
@@ -551,6 +630,97 @@ class PersonEditScreen extends StatelessWidget {
                                     content: Column(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
+                                        // Year Toggle in Dialog
+                                        StatefulBuilder(
+                                          builder: (context, setState) {
+                                            return Row(
+                                              children: [
+                                                GestureDetector(
+                                                  onTap: () => setState(
+                                                    () =>
+                                                        selectedHasYear = true,
+                                                  ),
+                                                  child: Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 4,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color: selectedHasYear
+                                                          ? AppColors.primary
+                                                          : Colors.transparent,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            4,
+                                                          ),
+                                                      border: Border.all(
+                                                        color: selectedHasYear
+                                                            ? AppColors.primary
+                                                            : const Color(
+                                                                0xFFDEDEDE,
+                                                              ),
+                                                      ),
+                                                    ),
+                                                    child: Text(
+                                                      '연도 포함',
+                                                      style: TextStyle(
+                                                        fontSize: 11,
+                                                        color: selectedHasYear
+                                                            ? Colors.white
+                                                            : const Color(
+                                                                0xFF999999,
+                                                              ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                GestureDetector(
+                                                  onTap: () => setState(
+                                                    () =>
+                                                        selectedHasYear = false,
+                                                  ),
+                                                  child: Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 4,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color: !selectedHasYear
+                                                          ? AppColors.primary
+                                                          : Colors.transparent,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            4,
+                                                          ),
+                                                      border: Border.all(
+                                                        color: !selectedHasYear
+                                                            ? AppColors.primary
+                                                            : const Color(
+                                                                0xFFDEDEDE,
+                                                              ),
+                                                      ),
+                                                    ),
+                                                    child: Text(
+                                                      '연도 없음',
+                                                      style: TextStyle(
+                                                        fontSize: 11,
+                                                        color: !selectedHasYear
+                                                            ? Colors.white
+                                                            : const Color(
+                                                                0xFF999999,
+                                                              ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        ),
+                                        const SizedBox(height: 16),
                                         TextField(
                                           controller: titleController,
                                           decoration: const InputDecoration(
@@ -583,9 +753,15 @@ class PersonEditScreen extends StatelessWidget {
                                                   ),
                                                   const SizedBox(width: 8),
                                                   Text(
-                                                    DateFormat(
-                                                      'yyyy-MM-dd',
-                                                    ).format(selectedDate),
+                                                    selectedHasYear
+                                                        ? DateFormat(
+                                                            'yyyy-MM-dd',
+                                                          ).format(selectedDate)
+                                                        : DateFormat(
+                                                            'MM-dd',
+                                                          ).format(
+                                                            selectedDate,
+                                                          ),
                                                   ),
                                                 ],
                                               ),
@@ -606,6 +782,7 @@ class PersonEditScreen extends StatelessWidget {
                                               index,
                                               titleController.text,
                                               selectedDate,
+                                              selectedHasYear,
                                             );
                                             Get.back();
                                           }
@@ -628,7 +805,13 @@ class PersonEditScreen extends StatelessWidget {
                                     ),
                                   ),
                                   Text(
-                                    DateFormat('yyyy-MM-dd').format(anniv.date),
+                                    anniv.hasYear
+                                        ? DateFormat(
+                                            'yyyy-MM-dd',
+                                          ).format(anniv.date)
+                                        : DateFormat(
+                                            'MM-dd',
+                                          ).format(anniv.date),
                                     style: const TextStyle(
                                       fontSize: 13,
                                       color: Color(0xFF2A2A2A),

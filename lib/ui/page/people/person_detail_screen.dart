@@ -253,7 +253,9 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
             style: const TextStyle(fontSize: 13, color: Color(0xFF2A2A2A)),
           ),
           Text(
-            DateFormat('yyyy.MM.dd').format(anniv.date),
+            anniv.hasYear
+                ? DateFormat('yyyy.MM.dd').format(anniv.date)
+                : DateFormat('MM.dd').format(anniv.date),
             style: const TextStyle(fontSize: 13, color: Color(0xFF2A2A2A)),
           ),
         ],

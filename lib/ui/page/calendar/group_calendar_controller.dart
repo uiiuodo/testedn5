@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
 import '../../../../data/model/schedule.dart';
-import '../../../../data/model/group.dart';
+
 import '../../../../data/model/person.dart';
-import '../../../../data/repository/group_repository.dart';
+
 import '../../../../data/repository/schedule_repository.dart';
 import '../../../../data/repository/person_repository.dart';
 import '../home/home_controller.dart';
@@ -21,7 +21,6 @@ class GroupCalendarController extends GetxController {
   // People - For Birthdays
   final RxList<Person> people = <Person>[].obs;
 
-  final GroupRepository _groupRepository = GroupRepository();
   final ScheduleRepository _scheduleRepository = ScheduleRepository();
   final PersonRepository _personRepository = PersonRepository();
 
@@ -120,14 +119,6 @@ class GroupCalendarController extends GetxController {
           }
         }
       }
-
-      // 3. Add Anniversary Events
-      for (final anniversary in person.anniversaries) {
-        if (anniversary.date.month == day.month &&
-            anniversary.date.day == day.day) {
-          events.add('🎉 ${anniversary.title}');
-        }
-      }
     }
 
     return events;
@@ -171,11 +162,7 @@ class GroupCalendarController extends GetxController {
       final homeController = Get.find<HomeController>();
       homeController.addGroup(name, colorValue);
     } catch (e) {
-      final newGroup = Group(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: name,
-        colorValue: colorValue,
-      );
+      print('Error adding group: $e');
     }
   }
 

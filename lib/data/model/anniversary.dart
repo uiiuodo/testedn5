@@ -27,11 +27,15 @@ class Anniversary {
   @HiveField(4)
   final AnniversaryType type;
 
+  @HiveField(5)
+  final bool hasYear;
+
   Anniversary({
     required this.id,
     required this.personId,
     required this.title,
     required this.date,
     required this.type,
+    this.hasYear = true,
   });
 }

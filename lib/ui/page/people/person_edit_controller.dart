@@ -54,6 +54,7 @@ class PersonEditController extends GetxController {
   // UI State for inline adding
   final RxBool isAddingAnniversary = false.obs;
   final Rx<DateTime> newAnniversaryDate = Rx<DateTime>(DateTime.now());
+  final RxBool newAnniversaryHasYear = true.obs;
   final newAnniversaryTitleController = TextEditingController();
   final newMemoController = TextEditingController();
 
@@ -226,6 +227,8 @@ class PersonEditController extends GetxController {
 
     // Schedule Birthday Event
     await BirthdayScheduler.scheduleBirthday(newPerson);
+    // Schedule Anniversary Events
+    await BirthdayScheduler.scheduleAnniversaries(newPerson);
 
     // Refresh Home
     if (Get.isRegistered<HomeController>()) {
@@ -236,7 +239,7 @@ class PersonEditController extends GetxController {
   }
 
   // Anniversary Logic
-  void addAnniversary(String title, DateTime date) {
+  void addAnniversary(String title, DateTime date, bool hasYear) {
     anniversaries.add(
       Anniversary(
         id: const Uuid().v4(),
@@ -244,6 +247,7 @@ class PersonEditController extends GetxController {
         title: title,
         date: date,
         type: AnniversaryType.etc,
+        hasYear: hasYear,
       ),
     );
   }
@@ -252,7 +256,7 @@ class PersonEditController extends GetxController {
     anniversaries.removeAt(index);
   }
 
-  void updateAnniversary(int index, String title, DateTime date) {
+  void updateAnniversary(int index, String title, DateTime date, bool hasYear) {
     final oldAnniv = anniversaries[index];
     anniversaries[index] = Anniversary(
       id: oldAnniv.id,
@@ -260,6 +264,7 @@ class PersonEditController extends GetxController {
       title: title,
       date: date,
       type: oldAnniv.type,
+      hasYear: hasYear,
     );
   }
 
