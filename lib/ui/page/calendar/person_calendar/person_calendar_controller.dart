@@ -186,6 +186,13 @@ class PersonCalendarController extends GetxController {
   void onDaySelected(DateTime selected, DateTime focused) {
     selectedDay.value = selected;
     focusedDay.value = focused;
+    if (sheetController.isAttached) {
+      sheetController.animateTo(
+        0.5,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   void onPageChanged(DateTime focused) {

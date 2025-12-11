@@ -167,15 +167,10 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                               selectedDayPredicate: (day) =>
                                   isSameDay(controller.selectedDay.value, day),
                               onDaySelected: (selectedDay, focusedDay) {
-                                controller.selectedDay.value = selectedDay;
-                                controller.focusedDay.value = focusedDay;
-                                if (controller.sheetController.isAttached) {
-                                  controller.sheetController.animateTo(
-                                    0.5,
-                                    duration: const Duration(milliseconds: 300),
-                                    curve: Curves.easeInOut,
-                                  );
-                                }
+                                controller.onDaySelected(
+                                  selectedDay,
+                                  focusedDay,
+                                );
                               },
                               headerVisible: false,
                               daysOfWeekHeight: 20,
@@ -183,6 +178,9 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                               calendarFormat: CalendarFormat.month,
                               availableGestures:
                                   AvailableGestures.horizontalSwipe,
+                              onPageChanged: (focusedDay) {
+                                controller.onPageChanged(focusedDay);
+                              },
                               daysOfWeekStyle: const DaysOfWeekStyle(
                                 weekdayStyle: TextStyle(
                                   color: Color(0xFF4A4A4A),
