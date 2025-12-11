@@ -30,7 +30,7 @@ class AnniversaryService {
               allDay: true,
               type: ScheduleType.anniversary,
               personIds: [person.id],
-              groupId: null, // Gray color for anniversaries
+              groupId: person.groupId, // Inherit person's group color
               isAnniversary: true,
             ),
           );
