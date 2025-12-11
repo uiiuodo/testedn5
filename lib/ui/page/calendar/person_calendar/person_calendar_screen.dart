@@ -166,6 +166,30 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                                           ),
                                           homeController:
                                               Get.find<HomeController>(),
+                                          onTapSchedule: (schedule) async {
+                                            final result =
+                                                await Get.bottomSheet(
+                                                  ScheduleEditScreen(
+                                                    schedule: schedule,
+                                                    personId:
+                                                        controller.personId,
+                                                  ),
+                                                  isScrollControlled: true,
+                                                  backgroundColor:
+                                                      Colors.transparent,
+                                                );
+                                            if (result != null &&
+                                                result is Schedule) {
+                                              await controller.updateSchedule(
+                                                result,
+                                              );
+                                            } else {
+                                              await controller.fetchSchedules();
+                                            }
+                                          },
+                                          onDeleteSchedule: (id) async {
+                                            await controller.deleteSchedule(id);
+                                          },
                                         );
                                       },
                                     );

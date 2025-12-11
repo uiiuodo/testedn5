@@ -11,6 +11,8 @@ class DayEventsSheet extends StatelessWidget {
   final DateTime selectedDate;
   final List<Schedule> events;
   final HomeController homeController;
+  final Function(Schedule) onTapSchedule;
+  final Function(String) onDeleteSchedule;
 
   const DayEventsSheet({
     super.key,
@@ -18,6 +20,8 @@ class DayEventsSheet extends StatelessWidget {
     required this.selectedDate,
     required this.events,
     required this.homeController,
+    required this.onTapSchedule,
+    required this.onDeleteSchedule,
   });
 
   @override
@@ -92,7 +96,7 @@ class DayEventsSheet extends StatelessWidget {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 if (careEvents.isNotEmpty) ...[
-                  Text(
+                  const Text(
                     '챙기기',
                     style: TextStyle(
                       fontSize: 12,
@@ -102,17 +106,21 @@ class DayEventsSheet extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   ...careEvents
-                      .map((e) => _buildEventItem(e, homeController))
+                      .map(
+                        (e) => _EventItem(
+                          schedule: e,
+                          homeController: homeController,
+                          onTap: () => onTapSchedule(e),
+                          onDelete: () => onDeleteSchedule(e.id),
+                        ),
+                      )
                       .toList(),
                   const SizedBox(height: 20),
                 ] else if (anniversaryEvents.isEmpty) ...[
-                  // Both empty?
-                  // Logic handled below, but if only care is empty we just don't show it?
-                  // User said "If empty... show one line 'No events'".
-                  // But wait, if both empty, maybe show "No events for this day".
+                  // Handled by the empty check below
                 ],
                 if (anniversaryEvents.isNotEmpty) ...[
-                  Text(
+                  const Text(
                     '기념일',
                     style: TextStyle(
                       fontSize: 12,
@@ -123,17 +131,19 @@ class DayEventsSheet extends StatelessWidget {
                   const SizedBox(height: 10),
                   ...anniversaryEvents
                       .map(
-                        (e) => _buildEventItem(
-                          e,
-                          homeController,
+                        (e) => _EventItem(
+                          schedule: e,
+                          homeController: homeController,
                           isAnniversarySection: true,
+                          onTap: () => onTapSchedule(e),
+                          onDelete: () => onDeleteSchedule(e.id),
                         ),
                       )
                       .toList(),
                 ],
                 if (careEvents.isEmpty && anniversaryEvents.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 30),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 30),
                     child: Center(
                       child: Text(
                         '챙길 일정이 없습니다.',
@@ -153,81 +163,154 @@ class DayEventsSheet extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildEventItem(
-    Schedule schedule,
-    HomeController homeController, {
-    bool isAnniversarySection = false,
-  }) {
+class _EventItem extends StatefulWidget {
+  final Schedule schedule;
+  final HomeController homeController;
+  final bool isAnniversarySection;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
+  const _EventItem({
+    required this.schedule,
+    required this.homeController,
+    this.isAnniversarySection = false,
+    required this.onTap,
+    required this.onDelete,
+  });
+
+  @override
+  State<_EventItem> createState() => _EventItemState();
+}
+
+class _EventItemState extends State<_EventItem> {
+  bool _isDeleteMode = false;
+
+  @override
+  Widget build(BuildContext context) {
     // Find Group Color
     int colorValue = 0xFFD9D9D9; // Default gray
-    if (schedule.groupId != null) {
-      final group = homeController.groups.firstWhereOrNull(
-        (g) => g.id == schedule.groupId,
+    if (widget.schedule.groupId != null) {
+      final group = widget.homeController.groups.firstWhereOrNull(
+        (g) => g.id == widget.schedule.groupId,
       );
       if (group != null) {
         colorValue = group.colorValue;
       }
     }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF5F5F5)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 4,
-            height: 32,
-            decoration: BoxDecoration(
-              color: Color(colorValue),
-              borderRadius: BorderRadius.circular(2),
+    return GestureDetector(
+      onTap: () {
+        if (_isDeleteMode) {
+          setState(() {
+            _isDeleteMode = false;
+          });
+        } else {
+          widget.onTap();
+        }
+      },
+      onLongPress: () {
+        if (!_isDeleteMode) {
+          setState(() {
+            _isDeleteMode = true;
+          });
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFF5F5F5)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  schedule.title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF4A4A4A),
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (!isAnniversarySection && !schedule.allDay) ...[
-                  const SizedBox(height: 4),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 4,
+              height: 32,
+              decoration: BoxDecoration(
+                color: Color(colorValue),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    '${schedule.startDateTime.hour > 12 ? '오후 ${schedule.startDateTime.hour - 12}' : '오전 ${schedule.startDateTime.hour}'}:${schedule.startDateTime.minute.toString().padLeft(2, '0')}',
+                    widget.schedule.title,
                     style: const TextStyle(
-                      fontSize: 10,
-                      color: Color(0xFF9D9D9D),
+                      fontSize: 14,
+                      color: Color(0xFF4A4A4A),
+                      fontWeight: FontWeight.w500,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ] else if (isAnniversarySection) ...[
-                  const SizedBox(height: 4),
-                  const Text(
-                    '매년 반복',
-                    style: TextStyle(fontSize: 10, color: Color(0xFF9D9D9D)),
-                  ),
+                  if (!widget.isAnniversarySection &&
+                      !widget.schedule.allDay) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '${widget.schedule.startDateTime.hour > 12 ? '오후 ${widget.schedule.startDateTime.hour - 12}' : '오전 ${widget.schedule.startDateTime.hour}'}:${widget.schedule.startDateTime.minute.toString().padLeft(2, '0')}',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Color(0xFF9D9D9D),
+                      ),
+                    ),
+                  ] else if (widget.isAnniversarySection) ...[
+                    const SizedBox(height: 4),
+                    const Text(
+                      '매년 반복',
+                      style: TextStyle(fontSize: 10, color: Color(0xFF9D9D9D)),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
+            if (_isDeleteMode)
+              GestureDetector(
+                onTap: _showDeleteDialog,
+                child: const Padding(
+                  padding: EdgeInsets.only(left: 8.0),
+                  child: Icon(Icons.close, color: Colors.grey, size: 20),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('삭제 확인'),
+        content: const Text('정말 삭제하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Close dialog
+              widget.onDelete(); // Perform delete
+              setState(() {
+                _isDeleteMode = false;
+              });
+            },
+            child: const Text('삭제', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

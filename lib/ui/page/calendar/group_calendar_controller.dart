@@ -207,6 +207,11 @@ class GroupCalendarController extends GetxController {
     fetchSchedules();
   }
 
+  Future<void> deleteSchedule(String id) async {
+    await _scheduleRepository.deleteSchedule(id);
+    fetchSchedules();
+  }
+
   Future<void> addSchedule(Schedule schedule) async {
     // Assign current group if selected and not 'all'
     if (selectedGroupId.value != 'all' && schedule.groupId == null) {

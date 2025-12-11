@@ -290,6 +290,32 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                                               selectedDay,
                                             ),
                                             homeController: homeController,
+                                            onTapSchedule: (schedule) async {
+                                              final result =
+                                                  await Get.bottomSheet(
+                                                    ScheduleEditScreen(
+                                                      schedule: schedule,
+                                                      personId: null,
+                                                    ),
+                                                    isScrollControlled: true,
+                                                    backgroundColor:
+                                                        Colors.transparent,
+                                                  );
+                                              if (result != null &&
+                                                  result is Schedule) {
+                                                await controller.updateSchedule(
+                                                  result,
+                                                );
+                                              } else {
+                                                await controller
+                                                    .fetchSchedules();
+                                              }
+                                            },
+                                            onDeleteSchedule: (id) async {
+                                              await controller.deleteSchedule(
+                                                id,
+                                              );
+                                            },
                                           );
                                         },
                                       );
