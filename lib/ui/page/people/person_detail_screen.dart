@@ -120,11 +120,7 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
                   // 4. Preferences
                   _buildSectionHeader('취향 기록'),
                   const SizedBox(height: 10),
-                  Column(
-                    children: person.preferences
-                        .map((pref) => _buildPreferenceAccordion(pref))
-                        .toList(),
-                  ),
+                  _buildPreferenceList(person.preferences),
                   const SizedBox(height: 40),
 
                   // 6. Bottom Button
@@ -166,6 +162,36 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
           );
         }),
       ),
+    );
+  }
+
+  Widget _buildPreferenceList(List<PreferenceCategory> preferences) {
+    final grouped = <String, List<PreferenceCategory>>{};
+    for (var p in preferences) {
+      if (!grouped.containsKey(p.title)) grouped[p.title] = [];
+      grouped[p.title]!.add(p);
+    }
+
+    return Column(
+      children: grouped.entries.map((entry) {
+        final title = entry.key;
+        final prefs = entry.value;
+
+        final likesList = prefs
+            .where((p) => p.like != null && p.like!.isNotEmpty)
+            .map((p) => p.like!)
+            .toList();
+        final dislikesList = prefs
+            .where((p) => p.dislike != null && p.dislike!.isNotEmpty)
+            .map((p) => p.dislike!)
+            .toList();
+
+        return _PreferenceAccordion(
+          title: title,
+          likes: likesList,
+          dislikes: dislikesList,
+        );
+      }).toList(),
     );
   }
 
@@ -282,16 +308,18 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
       ),
     );
   }
-
-  Widget _buildPreferenceAccordion(PreferenceCategory preference) {
-    return _PreferenceAccordion(preference: preference);
-  }
 }
 
 class _PreferenceAccordion extends StatefulWidget {
-  final PreferenceCategory preference;
+  final String title;
+  final List<String> likes;
+  final List<String> dislikes;
 
-  const _PreferenceAccordion({required this.preference});
+  const _PreferenceAccordion({
+    required this.title,
+    required this.likes,
+    required this.dislikes,
+  });
 
   @override
   State<_PreferenceAccordion> createState() => _PreferenceAccordionState();
@@ -317,7 +345,7 @@ class _PreferenceAccordionState extends State<_PreferenceAccordion> {
               children: [
                 Expanded(
                   child: Text(
-                    widget.preference.title,
+                    widget.title,
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
@@ -338,21 +366,11 @@ class _PreferenceAccordionState extends State<_PreferenceAccordion> {
         ),
         if (isExpanded) ...[
           const SizedBox(height: 8),
-          if (widget.preference.like != null &&
-              widget.preference.like!.isNotEmpty)
-            _buildDetailBox(
-              '선호',
-              widget.preference.like!,
-              const Color(0xFF00A6FF),
-            ),
+          if (widget.likes.isNotEmpty)
+            _buildDetailBox('선호', widget.likes, const Color(0xFF00A6FF)),
           const SizedBox(height: 8),
-          if (widget.preference.dislike != null &&
-              widget.preference.dislike!.isNotEmpty)
-            _buildDetailBox(
-              '비선호',
-              widget.preference.dislike!,
-              const Color(0xFF979797),
-            ),
+          if (widget.dislikes.isNotEmpty)
+            _buildDetailBox('비선호', widget.dislikes, const Color(0xFF979797)),
           const SizedBox(height: 16),
         ],
         const Divider(height: 1, color: Color(0xFFEEEEEE)),
@@ -361,7 +379,7 @@ class _PreferenceAccordionState extends State<_PreferenceAccordion> {
     );
   }
 
-  Widget _buildDetailBox(String label, String content, Color color) {
+  Widget _buildDetailBox(String label, List<String> items, Color color) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -381,13 +399,18 @@ class _PreferenceAccordionState extends State<_PreferenceAccordion> {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            content,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFF464646),
-              height: 1.4,
-              fontWeight: FontWeight.w300,
+          ...items.map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: 2),
+              child: Text(
+                '• $item',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF464646),
+                  height: 1.4,
+                  fontWeight: FontWeight.w300,
+                ),
+              ),
             ),
           ),
         ],

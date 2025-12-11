@@ -268,6 +268,10 @@ class _PreferenceAddBottomSheetState extends State<PreferenceAddBottomSheet> {
               decoration: InputDecoration(
                 isDense: true,
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
                 hintText: hintText,
                 hintStyle: AppTextStyles.caption.copyWith(
                   color: AppColors.textSecondary,
