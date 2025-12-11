@@ -343,7 +343,7 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
-                                      '그룹 일정 추가하기',
+                                      '일정 추가하기',
                                       style: AppTextStyles.body2.copyWith(
                                         color: AppColors.white,
                                         fontWeight: FontWeight.w500,
