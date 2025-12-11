@@ -721,115 +721,195 @@ class PersonEditScreen extends StatelessWidget {
                         .where((p) => p.dislike != null)
                         .toList();
 
+                    final isExpanded = controller.expandedCategories.contains(
+                      category,
+                    );
+
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Theme(
-                        data: Theme.of(
-                          context,
-                        ).copyWith(dividerColor: Colors.transparent),
-                        child: ExpansionTile(
-                          title: Row(
-                            children: [
-                              Text(
-                                category,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                ),
+                      child: Column(
+                        children: [
+                          // Header
+                          GestureDetector(
+                            onTap: () =>
+                                controller.toggleCategoryExpansion(category),
+                            behavior: HitTestBehavior.opaque,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
                               ),
-                            ],
+                              child: Row(
+                                children: [
+                                  // Accordion Arrow
+                                  AnimatedRotation(
+                                    turns: isExpanded
+                                        ? 0.0
+                                        : -0.25, // Open (Down) = 0.0, Closed (Right) = -0.25
+                                    duration: const Duration(milliseconds: 200),
+                                    child: const Icon(
+                                      Icons.keyboard_arrow_down_rounded,
+                                      size: 24,
+                                      color: Color(0xFFB0B0B0),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+
+                                  // Category Title
+                                  Expanded(
+                                    child: Text(
+                                      category,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+
+                                  // Delete Button (Only in Edit Mode - assumed always true here)
+                                  GestureDetector(
+                                    onTap: () {
+                                      Get.defaultDialog(
+                                        title: '카테고리 삭제',
+                                        titleStyle: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        middleText:
+                                            '"$category" 카테고리를 삭제하시겠습니까?',
+                                        middleTextStyle: const TextStyle(
+                                          fontSize: 14,
+                                        ),
+                                        textConfirm: '삭제',
+                                        textCancel: '취소',
+                                        confirmTextColor: Colors.white,
+                                        buttonColor: AppColors.primary,
+                                        cancelTextColor:
+                                            AppColors.textSecondary,
+                                        onConfirm: () {
+                                          controller.removePreferenceCategory(
+                                            category,
+                                          );
+                                          Get.back();
+                                        },
+                                      );
+                                    },
+                                    child: const Icon(
+                                      Icons.close_rounded,
+                                      size: 20,
+                                      color: Color(0xFF9D9D9D),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                          initiallyExpanded: true,
-                          tilePadding: EdgeInsets.zero,
-                          childrenPadding: const EdgeInsets.only(bottom: 16),
-                          children: [
-                            if (likes.isNotEmpty) ...[
-                              Container(
-                                width: double.infinity,
-                                margin: const EdgeInsets.only(bottom: 8),
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: const Color(0xFF2F80ED), // Blue
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      '선호',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF2F80ED),
+
+                          // Content
+                          if (isExpanded) ...[
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                              child: Column(
+                                children: [
+                                  if (likes.isNotEmpty) ...[
+                                    Container(
+                                      width: double.infinity,
+                                      margin: const EdgeInsets.only(bottom: 8),
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: const Color(
+                                            0xFF2F80ED,
+                                          ), // Blue
+                                          width: 1,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      likes.map((p) => p.like!).join(', '),
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        color: AppColors.textPrimary,
-                                        height: 1.5,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                            if (dislikes.isNotEmpty) ...[
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: const Color(0xFF333333), // Dark Gray
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      '비선호',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF333333),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      dislikes
-                                          .map((p) => p.dislike!)
-                                          .join(', '),
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        color: AppColors.textPrimary,
-                                        height: 1.5,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Text(
+                                            '선호',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF2F80ED),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            likes
+                                                .map((p) => p.like!)
+                                                .join(', '),
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              color: AppColors.textPrimary,
+                                              height: 1.5,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ],
-                                ),
+                                  if (dislikes.isNotEmpty) ...[
+                                    Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: const Color(
+                                            0xFF333333,
+                                          ), // Dark Gray
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Text(
+                                            '비선호',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF333333),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            dislikes
+                                                .map((p) => p.dislike!)
+                                                .join(', '),
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              color: AppColors.textPrimary,
+                                              height: 1.5,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
-                            ],
+                            ),
                           ],
-                        ),
+                        ],
                       ),
                     );
                   }).toList(),
                 );
               }),
+
               const SizedBox(height: 16),
 
               // Add Preference Button

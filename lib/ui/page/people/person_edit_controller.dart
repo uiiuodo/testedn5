@@ -41,6 +41,7 @@ class PersonEditController extends GetxController {
   final RxList<Anniversary> anniversaries = <Anniversary>[].obs;
   final RxList<Memo> memos = <Memo>[].obs;
   final RxList<PreferenceCategory> preferences = <PreferenceCategory>[].obs;
+  final RxSet<String> expandedCategories = <String>{}.obs;
 
   // New Fields (Memory Only)
   final mbtiController = TextEditingController();
@@ -166,6 +167,12 @@ class PersonEditController extends GetxController {
       anniversaries.value = List.from(person.anniversaries);
       memos.value = List.from(person.memos);
       preferences.value = List.from(person.preferences);
+
+      // Initialize expanded categories (all expanded by default)
+      expandedCategories.clear();
+      for (var p in person.preferences) {
+        expandedCategories.add(p.title);
+      }
 
       // Note: MBTI, Custom Fields, Lunar info are not loaded as they are not in the model yet.
 
@@ -367,5 +374,21 @@ class PersonEditController extends GetxController {
 
   void removeCustomField(int index) {
     customFields.removeAt(index);
+  }
+
+  // Preference Category Logic
+  void toggleCategoryExpansion(String category) {
+    if (expandedCategories.contains(category)) {
+      expandedCategories.remove(category);
+    } else {
+      expandedCategories.add(category);
+    }
+  }
+
+  void removePreferenceCategory(String category) {
+    // Remove all preferences with this category title
+    preferences.removeWhere((p) => p.title == category);
+    // Remove from expanded set
+    expandedCategories.remove(category);
   }
 }
