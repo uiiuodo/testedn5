@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import '../../../../data/model/schedule.dart';
 
 import '../../../../data/model/person.dart';
+import '../../../../service/anniversary_service.dart';
 
 import '../../../../data/repository/schedule_repository.dart';
 import '../../../../data/repository/person_repository.dart';
@@ -98,9 +99,20 @@ class GroupCalendarController extends GetxController {
     items.addAll(eventsForDay);
 
     // 2. Birthdays & Anniversaries
+    List<Person> allPeople = [];
+    try {
+      if (Get.isRegistered<HomeController>()) {
+        allPeople = Get.find<HomeController>().people;
+      } else {
+        allPeople = people;
+      }
+    } catch (e) {
+      allPeople = people;
+    }
+
     final filteredPeople = selectedGroupId.value == 'all'
-        ? people
-        : people.where((p) => p.groupId == selectedGroupId.value).toList();
+        ? allPeople
+        : allPeople.where((p) => p.groupId == selectedGroupId.value).toList();
 
     for (final person in filteredPeople) {
       // Birthdays
@@ -116,7 +128,6 @@ class GroupCalendarController extends GetxController {
           );
 
           if (!hasSchedule) {
-            // Create a synthetic Schedule for birthday
             items.add(
               Schedule(
                 id: 'birthday_${person.id}_${day.millisecondsSinceEpoch}',
@@ -128,33 +139,21 @@ class GroupCalendarController extends GetxController {
                 personIds: [person.id],
                 groupId: person.groupId,
                 isAnniversary: true,
-                // Other required fields
               ),
             );
           }
         }
       }
-
-      // Anniversaries
-      for (final anniv in person.anniversaries) {
-        if (anniv.date.month == day.month && anniv.date.day == day.day) {
-          items.add(
-            Schedule(
-              id: 'anniv_${anniv.id}_${day.year}',
-              title: '${person.name} - ${anniv.title}',
-              startDateTime: day,
-              endDateTime: day,
-              allDay: true,
-              type: ScheduleType.anniversary,
-              personIds: [person.id],
-              groupId: null, // Gray color for anniversaries
-              isAnniversary: true,
-              // Other required fields
-            ),
-          );
-        }
-      }
     }
+
+    // Anniversaries via Service
+    items.addAll(
+      AnniversaryService.getAnniversariesForDay(
+        filteredPeople,
+        day,
+        usePersonNamePrefix: true,
+      ),
+    );
 
     // Sort: Anniversary (0) > Care (1) > Etc (2)
     // Birthdays are Anniversary type, so they come first.

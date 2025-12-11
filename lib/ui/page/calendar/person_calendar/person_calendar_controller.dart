@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../../../../data/model/schedule.dart';
 import '../../../../data/repository/schedule_repository.dart';
+import '../../../../service/anniversary_service.dart';
 import '../../home/home_controller.dart';
 import '../schedule_edit_screen.dart';
 
@@ -115,23 +116,13 @@ class PersonCalendarController extends GetxController {
         );
 
         if (person != null) {
-          for (final anniv in person.anniversaries) {
-            if (anniv.date.month == day.month && anniv.date.day == day.day) {
-              combined.add(
-                Schedule(
-                  id: 'anniv_${anniv.id}_${day.year}',
-                  title: anniv.title,
-                  startDateTime: day,
-                  endDateTime: day,
-                  allDay: true,
-                  type: ScheduleType.anniversary,
-                  personIds: [personId],
-                  groupId: null, // Gray
-                  isAnniversary: true,
-                ),
-              );
-            }
-          }
+          combined.addAll(
+            AnniversaryService.getAnniversariesForDay(
+              [person],
+              day,
+              usePersonNamePrefix: false,
+            ),
+          );
         }
       }
     } catch (e) {
