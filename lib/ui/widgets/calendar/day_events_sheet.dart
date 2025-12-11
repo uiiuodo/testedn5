@@ -7,7 +7,6 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 
 class DayEventsSheet extends StatelessWidget {
-  final DraggableScrollableController controller;
   final ScrollController scrollController;
   final DateTime selectedDate;
   final List<Schedule> events;
@@ -15,7 +14,6 @@ class DayEventsSheet extends StatelessWidget {
 
   const DayEventsSheet({
     super.key,
-    required this.controller,
     required this.scrollController,
     required this.selectedDate,
     required this.events,

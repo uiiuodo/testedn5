@@ -27,8 +27,6 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
   bool _isBottomSheetOpen = false;
   final TextEditingController _groupNameController = TextEditingController();
   int _selectedColorValue = 0xFFFFE9E9; // Default color
-  final DraggableScrollableController _sheetController =
-      DraggableScrollableController();
 
   final List<int> _groupColors = [
     0xFFFFE9E9,
@@ -290,16 +288,29 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                                   controller.selectedDay.value = selectedDay;
                                   controller.focusedDay.value = focusedDay;
 
-                                  // Animate bottom sheet to open
-                                  if (_sheetController.isAttached) {
-                                    _sheetController.animateTo(
-                                      0.5,
-                                      duration: const Duration(
-                                        milliseconds: 300,
-                                      ),
-                                      curve: Curves.easeInOut,
-                                    );
-                                  }
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.transparent,
+                                    builder: (context) {
+                                      return DraggableScrollableSheet(
+                                        initialChildSize: 0.5,
+                                        minChildSize: 0.25,
+                                        maxChildSize: 0.9,
+                                        expand: false,
+                                        builder: (context, scrollController) {
+                                          return DayEventsSheet(
+                                            scrollController: scrollController,
+                                            selectedDate: selectedDay,
+                                            events: controller.getDayItems(
+                                              selectedDay,
+                                            ),
+                                            homeController: homeController,
+                                          );
+                                        },
+                                      );
+                                    },
+                                  );
                                 },
                                 onPageChanged: (focusedDay) {
                                   controller.focusedDay.value = focusedDay;
@@ -818,30 +829,6 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                 ),
               ),
             ),
-            // 5. Day Events Bottom Sheet
-            Obx(() {
-              final selectedDay = controller.selectedDay.value;
-              if (selectedDay == null) return const SizedBox.shrink();
-
-              return DraggableScrollableSheet(
-                controller: _sheetController,
-                initialChildSize: 0.15,
-                minChildSize: 0.15,
-                maxChildSize: 0.9,
-                snap: true,
-                snapSizes: const [0.15, 0.5, 0.9],
-                builder: (context, scrollController) {
-                  final dayEvents = controller.getDayItems(selectedDay);
-                  return DayEventsSheet(
-                    controller: _sheetController,
-                    scrollController: scrollController,
-                    selectedDate: selectedDay,
-                    events: dayEvents,
-                    homeController: homeController,
-                  );
-                },
-              );
-            }),
           ],
         ),
       ),

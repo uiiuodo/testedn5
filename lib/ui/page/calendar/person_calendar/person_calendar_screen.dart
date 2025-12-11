@@ -171,6 +171,30 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                                   selectedDay,
                                   focusedDay,
                                 );
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (context) {
+                                    return DraggableScrollableSheet(
+                                      initialChildSize: 0.5,
+                                      minChildSize: 0.25,
+                                      maxChildSize: 0.9,
+                                      expand: false,
+                                      builder: (context, scrollController) {
+                                        return DayEventsSheet(
+                                          scrollController: scrollController,
+                                          selectedDate: selectedDay,
+                                          events: controller.getDayItems(
+                                            selectedDay,
+                                          ),
+                                          homeController:
+                                              Get.find<HomeController>(),
+                                        );
+                                      },
+                                    );
+                                  },
+                                );
                               },
                               headerVisible: false,
                               daysOfWeekHeight: 20,
@@ -376,32 +400,6 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                 ),
               ],
             ),
-            // Day Events Bottom Sheet
-            Obx(() {
-              final selectedDay = controller.selectedDay.value;
-              if (selectedDay == null) return const SizedBox.shrink();
-
-              final homeController = Get.find<HomeController>();
-
-              return DraggableScrollableSheet(
-                controller: controller.sheetController,
-                initialChildSize: 0.15,
-                minChildSize: 0.15,
-                maxChildSize: 0.9,
-                snap: true,
-                snapSizes: const [0.15, 0.5, 0.9],
-                builder: (context, scrollController) {
-                  final dayEvents = controller.getEventsForDay(selectedDay);
-                  return DayEventsSheet(
-                    controller: controller.sheetController,
-                    scrollController: scrollController,
-                    selectedDate: selectedDay,
-                    events: dayEvents,
-                    homeController: homeController,
-                  );
-                },
-              );
-            }),
           ],
         ),
       ),

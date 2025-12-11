@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../data/model/schedule.dart';
 import '../../../../data/repository/schedule_repository.dart';
@@ -11,8 +10,6 @@ import '../../../../data/model/planned_task.dart';
 class PersonCalendarController extends GetxController {
   final String personId;
   final ScheduleRepository _scheduleRepository = Get.find<ScheduleRepository>();
-  final DraggableScrollableController sheetController =
-      DraggableScrollableController();
 
   final PlannedTaskRepository _plannedTaskRepository = PlannedTaskRepository();
   final RxList<PlannedTask> plannedTasks = <PlannedTask>[].obs;
@@ -171,13 +168,6 @@ class PersonCalendarController extends GetxController {
   void onDaySelected(DateTime selected, DateTime focused) {
     selectedDay.value = selected;
     focusedDay.value = focused;
-    if (sheetController.isAttached) {
-      sheetController.animateTo(
-        0.5,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
   }
 
   void onPageChanged(DateTime focused) {
