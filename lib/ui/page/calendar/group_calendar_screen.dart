@@ -240,6 +240,15 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                                     color: Colors.white,
                                   ),
                                 ),
+                                calendarStyle: const CalendarStyle(
+                                  selectedDecoration: BoxDecoration(
+                                    color: Colors.transparent,
+                                  ),
+                                  selectedTextStyle: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 14,
+                                  ),
+                                ),
                                 calendarBuilders: CalendarBuilders(
                                   dowBuilder: (context, day) {
                                     final text = DateFormat.E().format(day);
@@ -269,7 +278,11 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                                     );
                                   },
                                   selectedBuilder: (context, day, focusedDay) {
-                                    return _buildDayCell(controller, day, true);
+                                    return _buildDayCell(
+                                      controller,
+                                      day,
+                                      false,
+                                    );
                                   },
                                   todayBuilder: (context, day, focusedDay) {
                                     return _buildDayCell(

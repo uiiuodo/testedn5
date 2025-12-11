@@ -173,6 +173,15 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                               fontWeight: FontWeight.w300,
                             ),
                           ),
+                          calendarStyle: const CalendarStyle(
+                            selectedDecoration: BoxDecoration(
+                              color: Colors.transparent,
+                            ),
+                            selectedTextStyle: TextStyle(
+                              color: Colors.black,
+                              fontSize: 14,
+                            ),
+                          ),
                           calendarBuilders: CalendarBuilders(
                             dowBuilder: (context, day) {
                               if (day.weekday == DateTime.sunday) {
@@ -193,7 +202,7 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                             defaultBuilder: (context, day, focusedDay) =>
                                 _buildDayCell(controller, day, false),
                             selectedBuilder: (context, day, focusedDay) =>
-                                _buildDayCell(controller, day, true),
+                                _buildDayCell(controller, day, false),
                             todayBuilder: (context, day, focusedDay) =>
                                 _buildDayCell(
                                   controller,
