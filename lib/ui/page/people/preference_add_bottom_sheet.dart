@@ -60,7 +60,29 @@ class _PreferenceAddBottomSheetState extends State<PreferenceAddBottomSheet> {
 
   String _formatContents(List<String> contents) {
     if (contents.isEmpty) return '• ';
-    return contents.map((e) => '• $e').join('\n');
+
+    final List<String> flattened = [];
+    for (var item in contents) {
+      // Split by newline first
+      var lines = item.split('\n');
+      for (var line in lines) {
+        // Split by comma
+        var parts = line.split(',');
+        for (var part in parts) {
+          var clean = part.trim();
+          // Remove existing bullets if any
+          if (clean.startsWith('•')) clean = clean.substring(1).trim();
+          if (clean.startsWith('·')) clean = clean.substring(1).trim();
+
+          if (clean.isNotEmpty) {
+            flattened.add(clean);
+          }
+        }
+      }
+    }
+
+    if (flattened.isEmpty) return '• ';
+    return flattened.map((e) => '• $e').join('\n');
   }
 
   @override
