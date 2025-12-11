@@ -117,6 +117,8 @@ class _PreferenceAddBottomSheetState extends State<PreferenceAddBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditMode = widget.initialCategory != null;
+
     return Container(
       padding: EdgeInsets.only(
         top: 24,
@@ -132,9 +134,9 @@ class _PreferenceAddBottomSheetState extends State<PreferenceAddBottomSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '취향 기록',
-            style: TextStyle(
+          Text(
+            isEditMode ? '취향 기록 수정' : '취향 기록',
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
@@ -269,9 +271,9 @@ class _PreferenceAddBottomSheetState extends State<PreferenceAddBottomSheet> {
                 ),
                 elevation: 0,
               ),
-              child: const Text(
-                '추가하기',
-                style: TextStyle(
+              child: Text(
+                isEditMode ? '수정하기' : '추가하기',
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,

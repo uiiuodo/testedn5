@@ -368,6 +368,42 @@ class PersonEditController extends GetxController {
     }
   }
 
+  void updatePreferenceGroup(
+    String oldCategory,
+    bool oldIsLike,
+    String newCategory,
+    bool newIsLike,
+    List<String> newContents,
+  ) {
+    // 1. Remove old items matching category AND type
+    preferences.removeWhere((p) {
+      if (p.title != oldCategory) return false;
+      if (oldIsLike) {
+        return p.like != null;
+      } else {
+        return p.dislike != null;
+      }
+    });
+
+    // 2. Add new items
+    addPreferences(newCategory, newIsLike, newContents);
+
+    // 3. Update expanded categories if category name changed
+    if (oldCategory != newCategory) {
+      if (expandedCategories.contains(oldCategory)) {
+        // If the old category is now empty (both like/dislike gone), remove it from expanded
+        // But wait, we only removed one type. The other type might still exist.
+        // Check if any items remain for oldCategory
+        bool hasRemaining = preferences.any((p) => p.title == oldCategory);
+        if (!hasRemaining) {
+          expandedCategories.remove(oldCategory);
+        }
+        // Add new category to expanded
+        expandedCategories.add(newCategory);
+      }
+    }
+  }
+
   void addCustomField(String title, String content) {
     customFields.add(MapEntry(title, TextEditingController(text: content)));
   }
