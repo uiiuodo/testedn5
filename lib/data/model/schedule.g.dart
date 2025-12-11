@@ -26,13 +26,18 @@ class ScheduleAdapter extends TypeAdapter<Schedule> {
       personIds: (fields[6] as List).cast<String>(),
       groupId: fields[7] as String?,
       isPlanned: fields[8] as bool,
+      repeatType: fields[9] as String,
+      alarmOffsetMinutes: fields[10] as int?,
+      description: fields[11] as String?,
+      isAnniversary: fields[12] as bool,
+      isImportant: fields[13] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, Schedule obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(14)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -50,7 +55,17 @@ class ScheduleAdapter extends TypeAdapter<Schedule> {
       ..writeByte(7)
       ..write(obj.groupId)
       ..writeByte(8)
-      ..write(obj.isPlanned);
+      ..write(obj.isPlanned)
+      ..writeByte(9)
+      ..write(obj.repeatType)
+      ..writeByte(10)
+      ..write(obj.alarmOffsetMinutes)
+      ..writeByte(11)
+      ..write(obj.description)
+      ..writeByte(12)
+      ..write(obj.isAnniversary)
+      ..writeByte(13)
+      ..write(obj.isImportant);
   }
 
   @override

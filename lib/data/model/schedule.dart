@@ -41,6 +41,21 @@ class Schedule {
   @HiveField(8)
   final bool isPlanned;
 
+  @HiveField(9)
+  final String repeatType; // NONE, DAILY, WEEKLY, MONTHLY, YEARLY
+
+  @HiveField(10)
+  final int? alarmOffsetMinutes; // null = none
+
+  @HiveField(11)
+  final String? description;
+
+  @HiveField(12)
+  final bool isAnniversary;
+
+  @HiveField(13)
+  final bool isImportant;
+
   Schedule({
     required this.id,
     required this.title,
@@ -51,5 +66,10 @@ class Schedule {
     required this.personIds,
     this.groupId,
     this.isPlanned = false,
+    this.repeatType = 'NONE',
+    this.alarmOffsetMinutes,
+    this.description,
+    this.isAnniversary = false,
+    this.isImportant = false,
   });
 }

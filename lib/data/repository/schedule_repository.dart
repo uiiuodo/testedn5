@@ -19,4 +19,8 @@ class ScheduleRepository {
   Future<void> deleteSchedule(String id) async {
     await _box.delete(id);
   }
+
+  List<Schedule> getSchedulesByPerson(String personId) {
+    return _box.values.where((s) => s.personIds.contains(personId)).toList();
+  }
 }
