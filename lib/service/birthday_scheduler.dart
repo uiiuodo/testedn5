@@ -50,7 +50,7 @@ class BirthdayScheduler {
 
     // Refresh NotificationController if alive
     if (Get.isRegistered<NotificationController>()) {
-      Get.find<NotificationController>().fetchUpcomingEvents();
+      Get.find<NotificationController>().fetchNotifications();
     }
   }
 
@@ -103,7 +103,7 @@ class BirthdayScheduler {
 
     // Refresh NotificationController if alive
     if (Get.isRegistered<NotificationController>()) {
-      Get.find<NotificationController>().fetchUpcomingEvents();
+      Get.find<NotificationController>().fetchNotifications();
     }
   }
 }
