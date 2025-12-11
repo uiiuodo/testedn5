@@ -408,6 +408,19 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
     );
   }
 
+  int getCategoryColor(Schedule event) {
+    if (event.groupId != null) {
+      final homeController = Get.find<HomeController>();
+      final group = homeController.groups.firstWhereOrNull(
+        (g) => g.id == event.groupId,
+      );
+      if (group != null) {
+        return group.colorValue;
+      }
+    }
+    return 0xFFD9D9D9; // Default gray
+  }
+
   Widget _buildDayCell(
     PersonCalendarController controller,
     DateTime day,
@@ -416,6 +429,8 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
     bool isOutside = false,
   }) {
     final items = controller.getDayItems(day);
+    final firstEvent = items.isNotEmpty ? items.first : null;
+
     Color dayColor = const Color(0xFF4A4A4A);
     if (day.weekday == DateTime.sunday)
       dayColor = const Color(0xFFFF0000);
@@ -424,73 +439,56 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
     if (isOutside) dayColor = dayColor.withOpacity(0.3);
 
     return Container(
-      margin: const EdgeInsets.all(2),
+      margin: const EdgeInsets.all(0), // No margin to fill cell
       decoration: BoxDecoration(
         color: isToday ? const Color(0xFFF2F2F2) : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
-        border: isSelected
-            ? Border.all(color: const Color(0xFF4A4A4A), width: 1)
-            : null,
+        border: isSelected ? Border.all(color: Colors.black, width: 1.5) : null,
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 4, left: 6),
-            child: Text(
-              '${day.day}',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w300,
-                color: dayColor,
-              ),
+          Text(
+            '${day.day}',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: isToday ? FontWeight.bold : FontWeight.w400,
+              color: dayColor,
             ),
           ),
-          const SizedBox(height: 2),
-          // Event List
-          Container(
-            height: 22, // Requested: 22px fixed height
-            margin: const EdgeInsets.only(
-              bottom: 2,
-            ), // Requested: margin bottom <= 2
-            padding: const EdgeInsets.symmetric(
-              horizontal: 4,
-            ), // Requested: horizontal 4, vertical 0
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min, // Requested: mainAxisSize min
-              children: [
-                ...items.take(1).map((item) {
-                  // take(1) to fit in 22px (font 10 ~ 14px height)
-                  return Row(
+          const SizedBox(height: 4),
+          SizedBox(
+            height: 18, // Fixed height for event text area
+            child: firstEvent == null
+                ? const SizedBox.shrink()
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Color Tag
                       Container(
-                        width: 2,
-                        height: 10, // Adjust to match font scale
-                        color: item.groupColor != null
-                            ? Color(item.groupColor!)
-                            : const Color(0xFFD9D9D9),
+                        width: 4,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: Color(getCategoryColor(firstEvent)),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
                       const SizedBox(width: 4),
-                      Expanded(
+                      // Title
+                      Flexible(
                         child: Text(
-                          item.title,
+                          firstEvent.title.length > 4
+                              ? '${firstEvent.title.substring(0, 4)}…'
+                              : firstEvent.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 10, // Requested: fontSize 10
-                            color: Color(0xFF4A4A4A),
-                            fontWeight: FontWeight.w400,
-                            overflow:
-                                TextOverflow.ellipsis, // Requested: ellipsis
-                            height: 1.0,
+                            fontSize: 9,
+                            color: Colors.black87,
                           ),
-                          maxLines: 1, // Requested: maxLines 1
                         ),
                       ),
                     ],
-                  );
-                }),
-              ],
-            ),
+                  ),
           ),
         ],
       ),

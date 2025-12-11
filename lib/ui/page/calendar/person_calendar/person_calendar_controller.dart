@@ -112,23 +112,8 @@ class PersonCalendarController extends GetxController {
     isEditMode.value = !isEditMode.value;
   }
 
-  List<ScheduleWithColor> getDayItems(DateTime day) {
-    // Map Schedule to a view model with color
-    final schedules = getEventsForDay(day);
-    return schedules
-        .map(
-          (s) => ScheduleWithColor(
-            title: s.title,
-            // Logic for color?
-            // "If group color exists...".
-            // I don't have group colors here.
-            // I'll return null or a hashed color for now or parse if I had Group repo.
-            groupColor: s.groupId != null
-                ? 0xFF9C27B0
-                : null, // Purple placeholder if group ID exists
-          ),
-        )
-        .toList();
+  List<Schedule> getDayItems(DateTime day) {
+    return getEventsForDay(day);
   }
 
   List<Schedule> getEventsForDay(DateTime day) {
@@ -222,10 +207,4 @@ class PersonCalendarController extends GetxController {
     await _scheduleRepository.deleteSchedule(id);
     fetchSchedules();
   }
-}
-
-class ScheduleWithColor {
-  final String title;
-  final int? groupColor;
-  ScheduleWithColor({required this.title, this.groupColor});
 }
