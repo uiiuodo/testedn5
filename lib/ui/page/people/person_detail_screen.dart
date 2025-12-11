@@ -89,9 +89,13 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
                           '생년월일',
                           _buildBirthdayText(person, controller),
                         ),
-                        _buildInfoRow('전화번호', person.phone ?? '-'),
-                        _buildInfoRow('주소', person.address ?? '-'),
-                        _buildInfoRow('e-mail', person.email ?? '-'),
+                        _buildInfoRow('전화번호', person.phone),
+                        _buildInfoRow('주소', person.address),
+                        _buildInfoRow('e-mail', person.email),
+                        _buildInfoRow('MBTI', person.mbti),
+                        ...person.extraInfo.entries.map(
+                          (e) => _buildInfoRow(e.key, e.value),
+                        ),
                       ],
                     ),
                   ),
@@ -195,8 +199,8 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
     );
   }
 
-  String _buildBirthdayText(Person person, PersonDetailController controller) {
-    if (person.birthDate == null) return '-';
+  String? _buildBirthdayText(Person person, PersonDetailController controller) {
+    if (person.birthDate == null) return null;
 
     // Calculate International Age (Man Age)
     final age = _calculateInternationalAge(person.birthDate);
@@ -239,7 +243,10 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String? value) {
+    if (value == null || value.trim().isEmpty || value == '-') {
+      return const SizedBox.shrink();
+    }
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(

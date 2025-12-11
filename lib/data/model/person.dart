@@ -37,6 +37,12 @@ class Person {
   @HiveField(10)
   final List<PreferenceCategory> preferences;
 
+  @HiveField(11)
+  final String? mbti;
+
+  @HiveField(12, defaultValue: {})
+  final Map<String, String> extraInfo;
+
   Person({
     required this.id,
     required this.name,
@@ -48,5 +54,7 @@ class Person {
     this.anniversaries = const [],
     this.memos = const [],
     this.preferences = const [],
+    this.mbti,
+    this.extraInfo = const {},
   });
 }

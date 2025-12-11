@@ -174,7 +174,14 @@ class PersonEditController extends GetxController {
         expandedCategories.add(p.title);
       }
 
-      // Note: MBTI, Custom Fields, Lunar info are not loaded as they are not in the model yet.
+      // Note: MBTI, Custom Fields logic
+      mbtiController.text = person.mbti ?? '';
+      showMbti.value = person.mbti != null && person.mbti!.isNotEmpty;
+
+      customFields.clear();
+      person.extraInfo.forEach((key, value) {
+        customFields.add(MapEntry(key, TextEditingController(text: value)));
+      });
 
       // We do NOT set visibility flags to false here, because we want them visible by default
       // so the user can edit them. They are UI state only.
@@ -198,6 +205,13 @@ class PersonEditController extends GetxController {
       return;
     }
 
+    final Map<String, String> extraInfoMap = {};
+    for (var entry in customFields) {
+      if (entry.value.text.isNotEmpty) {
+        extraInfoMap[entry.key] = entry.value.text;
+      }
+    }
+
     final newPerson = Person(
       id: personId ?? const Uuid().v4(),
       name: nameController.text,
@@ -215,7 +229,10 @@ class PersonEditController extends GetxController {
       anniversaries: anniversaries,
       memos: memos,
       preferences: preferences,
-      // Note: MBTI, Custom Fields, Lunar info are not saved as they are not in the model yet.
+      mbti: showMbti.value && mbtiController.text.isNotEmpty
+          ? mbtiController.text
+          : null,
+      extraInfo: extraInfoMap,
     );
 
     if (personId != null) {
