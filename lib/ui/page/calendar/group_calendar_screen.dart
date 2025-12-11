@@ -10,6 +10,7 @@ import 'group_calendar_controller.dart';
 import '../../../../data/model/schedule.dart';
 import 'schedule_edit_screen.dart';
 import '../../widgets/common/refreshable_layout.dart';
+import '../../widgets/common/group_management_bottom_sheet.dart';
 
 class GroupCalendarScreen extends StatefulWidget {
   const GroupCalendarScreen({super.key});
@@ -204,6 +205,7 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                   child: RefreshableLayout(
                     onRefresh: () async {
                       await controller.fetchSchedules();
+                      await homeController.fetchGroups();
                     },
                     child: SingleChildScrollView(
                       child: Column(
@@ -439,16 +441,47 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                                 ),
                               ],
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                ...homeController.usedGroups.map(
-                                  (group) => InkWell(
+                            child: Obx(
+                              () => Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ...homeController.groups.map(
+                                    (group) => InkWell(
+                                      onTap: () {
+                                        controller.selectGroup(group.id);
+                                        setState(() {
+                                          _isDropdownOpen = false;
+                                        });
+                                      },
+                                      child: Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 26,
+                                          vertical: 8,
+                                        ),
+                                        child: Text(
+                                          group.name,
+                                          style: AppTextStyles.body1.copyWith(
+                                            fontWeight: FontWeight.w300,
+                                            color: AppColors.primary,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  const Divider(
+                                    height: 1,
+                                    thickness: 1,
+                                    color: Color(0xFFECECEC),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  InkWell(
                                     onTap: () {
-                                      controller.selectGroup(group.id);
                                       setState(() {
                                         _isDropdownOpen = false;
+                                        _isBottomSheetOpen = true;
                                       });
                                     },
                                     child: Container(
@@ -458,7 +491,7 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                                         vertical: 8,
                                       ),
                                       child: Text(
-                                        group.name,
+                                        '그룹 추가하기',
                                         style: AppTextStyles.body1.copyWith(
                                           fontWeight: FontWeight.w300,
                                           color: AppColors.primary,
@@ -466,37 +499,49 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                                       ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(height: 4),
-                                const Divider(
-                                  height: 1,
-                                  thickness: 1,
-                                  color: Color(0xFFECECEC),
-                                ),
-                                const SizedBox(height: 4),
-                                InkWell(
-                                  onTap: () {
-                                    setState(() {
-                                      _isDropdownOpen = false;
-                                      _isBottomSheetOpen = true;
-                                    });
-                                  },
-                                  child: Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 26,
-                                      vertical: 8,
-                                    ),
-                                    child: Text(
-                                      '그룹 추가하기',
-                                      style: AppTextStyles.body1.copyWith(
-                                        fontWeight: FontWeight.w300,
-                                        color: AppColors.primary,
+                                  InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        _isDropdownOpen = false;
+                                      });
+                                      showModalBottomSheet(
+                                        context: context,
+                                        isScrollControlled: true,
+                                        backgroundColor: Colors.transparent,
+                                        builder: (context) => Obx(
+                                          () => GroupManagementBottomSheet(
+                                            groups: homeController.groups
+                                                .toList(),
+                                            onRename: (id, newName) {
+                                              homeController.updateGroup(
+                                                id,
+                                                newName,
+                                              );
+                                            },
+                                            onDelete: (id) {
+                                              homeController.deleteGroup(id);
+                                            },
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 26,
+                                        vertical: 8,
+                                      ),
+                                      child: Text(
+                                        '그룹 편집하기',
+                                        style: AppTextStyles.body1.copyWith(
+                                          fontWeight: FontWeight.w300,
+                                          color: AppColors.primary,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
