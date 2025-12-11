@@ -203,15 +203,30 @@ class MyRecordController extends GetxController {
     expandedCategories.remove(category);
   }
 
-  void addPreferences(String category, bool isLike, List<String> contents) {
-    for (final content in contents) {
+  void addPreferences(
+    String category,
+    List<String> likes,
+    List<String> dislikes,
+  ) {
+    for (final content in likes) {
       preferences.add(
         PreferenceCategory(
           id: const Uuid().v4(),
           personId: myId,
           title: category,
-          like: isLike ? content : null,
-          dislike: !isLike ? content : null,
+          like: content,
+          dislike: null,
+        ),
+      );
+    }
+    for (final content in dislikes) {
+      preferences.add(
+        PreferenceCategory(
+          id: const Uuid().v4(),
+          personId: myId,
+          title: category,
+          like: null,
+          dislike: content,
         ),
       );
     }
@@ -219,31 +234,25 @@ class MyRecordController extends GetxController {
 
   void updatePreferenceGroup(
     String oldCategory,
-    bool oldIsLike,
     String newCategory,
-    bool newIsLike,
-    List<String> newContents,
+    List<String> newLikes,
+    List<String> newDislikes,
   ) {
-    // 1. Remove old items matching category AND type
-    preferences.removeWhere((p) {
-      if (p.title != oldCategory) return false;
-      if (oldIsLike) {
-        return p.like != null;
-      } else {
-        return p.dislike != null;
-      }
-    });
+    // 1. Remove ALL items matching oldCategory (both likes and dislikes)
+    preferences.removeWhere((p) => p.title == oldCategory);
 
     // 2. Add new items
-    addPreferences(newCategory, newIsLike, newContents);
+    addPreferences(newCategory, newLikes, newDislikes);
 
     // 3. Update expanded categories if category name changed
     if (oldCategory != newCategory) {
       if (expandedCategories.contains(oldCategory)) {
-        bool hasRemaining = preferences.any((p) => p.title == oldCategory);
-        if (!hasRemaining) {
-          expandedCategories.remove(oldCategory);
-        }
+        expandedCategories.remove(oldCategory);
+        expandedCategories.add(newCategory);
+      }
+    } else {
+      // Ensure it stays expanded if it was expanded
+      if (!expandedCategories.contains(newCategory)) {
         expandedCategories.add(newCategory);
       }
     }

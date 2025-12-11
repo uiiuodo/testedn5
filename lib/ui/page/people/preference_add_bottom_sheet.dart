@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_text_styles.dart';
 
 import '../../widgets/common/custom_input_field.dart';
 
@@ -8,16 +9,17 @@ class PreferenceAddBottomSheet extends StatefulWidget {
   /// 처음 등록할 때는 null로 두고,
   /// 수정 모달로 띄울 때만 값 넣어서 호출하면 됨.
   final String? initialCategory; // 초기 카테고리 (예: "음식")
-  final bool? initialIsLike; // 초기 선호 여부 (true=선호, false=비선호)
-  final List<String>? initialContents; // 초기 내용 목록
+  final List<String>? initialLikes; // 초기 선호 내용 목록
+  final List<String>? initialDislikes; // 초기 비선호 내용 목록
 
-  final Function(String category, bool isLike, List<String> contents) onAdd;
+  final Function(String category, List<String> likes, List<String> dislikes)
+  onAdd;
 
   const PreferenceAddBottomSheet({
     super.key,
     this.initialCategory,
-    this.initialIsLike,
-    this.initialContents,
+    this.initialLikes,
+    this.initialDislikes,
     required this.onAdd,
   });
 
@@ -28,69 +30,60 @@ class PreferenceAddBottomSheet extends StatefulWidget {
 
 class _PreferenceAddBottomSheetState extends State<PreferenceAddBottomSheet> {
   late TextEditingController _categoryController;
-  late TextEditingController _contentController;
+  late TextEditingController _likeController;
+  late TextEditingController _dislikeController;
 
-  // true: Like, false: Dislike, null: Not selected
-  bool? _isLike;
+  bool isLikeEnabled = false;
+  bool isDislikeEnabled = false;
 
   @override
   void initState() {
     super.initState();
-
-    // 선호/비선호 초기값
-    _isLike = widget.initialIsLike;
 
     // 카테고리 초기값
     _categoryController = TextEditingController(
       text: widget.initialCategory ?? '',
     );
 
-    // 내용 초기값
-    String initialText;
+    // 선호 초기값
+    final likes = widget.initialLikes ?? [];
+    isLikeEnabled = likes.isNotEmpty;
+    _likeController = TextEditingController(text: _formatContents(likes));
 
-    if (widget.initialContents != null && widget.initialContents!.isNotEmpty) {
-      // 이미 저장된 내용이 있을 때 → 각 줄 앞에 점 붙여서 보여주기
-      initialText = widget.initialContents!.map((e) => '• $e').join('\n');
-    } else {
-      // 새로 추가할 때 → 첫 줄에 점 하나 깔아두기
-      initialText = '• ';
-    }
+    // 비선호 초기값
+    final dislikes = widget.initialDislikes ?? [];
+    isDislikeEnabled = dislikes.isNotEmpty;
+    _dislikeController = TextEditingController(text: _formatContents(dislikes));
 
-    _contentController = TextEditingController(text: initialText);
+    // 새로 추가 모드일 때 기본적으로 둘 다 꺼져있음 (위 로직에서 처리됨)
+  }
+
+  String _formatContents(List<String> contents) {
+    if (contents.isEmpty) return '• ';
+    return contents.map((e) => '• $e').join('\n');
   }
 
   @override
   void dispose() {
     _categoryController.dispose();
-    _contentController.dispose();
+    _likeController.dispose();
+    _dislikeController.dispose();
     super.dispose();
   }
 
-  void _handleContentChange(String value) {
+  void _handleContentChange(TextEditingController controller, String value) {
     // 엔터 치면 자동으로 다음 줄에 점 찍어주기
     if (value.endsWith('\n')) {
       final newValue = '$value• ';
-      _contentController.value = TextEditingValue(
+      controller.value = TextEditingValue(
         text: newValue,
         selection: TextSelection.collapsed(offset: newValue.length),
       );
     }
   }
 
-  void _submit() {
-    final category = _categoryController.text.trim();
-    if (category.isEmpty) {
-      Get.snackbar('알림', '카테고리를 입력해주세요.');
-      return;
-    }
-
-    if (_isLike == null) {
-      Get.snackbar('알림', '선호/비선호를 선택해주세요.');
-      return;
-    }
-
-    // 내용 파싱해서 깔끔한 리스트 만들기
-    final rawLines = _contentController.text.split('\n');
+  List<String> _parseContents(String text) {
+    final rawLines = text.split('\n');
     final validContents = <String>[];
 
     for (final line in rawLines) {
@@ -106,13 +99,29 @@ class _PreferenceAddBottomSheetState extends State<PreferenceAddBottomSheet> {
         validContents.add(cleanLine);
       }
     }
+    return validContents;
+  }
 
-    if (validContents.isEmpty) {
-      Get.snackbar('알림', '내용을 입력해주세요.');
+  void _submit() {
+    final category = _categoryController.text.trim();
+    if (category.isEmpty) {
+      Get.snackbar('알림', '카테고리를 입력해주세요.');
       return;
     }
 
-    widget.onAdd(category, _isLike!, validContents);
+    final likes = isLikeEnabled
+        ? _parseContents(_likeController.text)
+        : <String>[];
+    final dislikes = isDislikeEnabled
+        ? _parseContents(_dislikeController.text)
+        : <String>[];
+
+    if (likes.isEmpty && dislikes.isEmpty) {
+      Get.snackbar('알림', '선호 또는 비선호 중 하나 이상 내용을 입력해주세요.');
+      return;
+    }
+
+    widget.onAdd(category, likes, dislikes);
   }
 
   @override
@@ -152,109 +161,31 @@ class _PreferenceAddBottomSheetState extends State<PreferenceAddBottomSheet> {
           ),
           const SizedBox(height: 20),
 
-          // Type Selection (Like / Dislike)
-          Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _isLike = true;
-                    });
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF7F7F7), // Very Light Gray
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: _isLike == true
-                            ? const Color(0xFF2F80ED) // Blue (선호 선택)
-                            : Colors.transparent,
-                        width: 2.0,
-                      ),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      '선호',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: _isLike == true
-                            ? FontWeight.bold
-                            : FontWeight.w600,
-                        color: const Color(0xFF333333),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _isLike = false;
-                    });
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF7F7F7),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: _isLike == false
-                            ? const Color(0xFF000000) // Black (비선호 선택)
-                            : Colors.transparent,
-                        width: 2.0,
-                      ),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      '비선호',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: _isLike == false
-                            ? FontWeight.bold
-                            : FontWeight.w600,
-                        color: const Color(0xFF333333),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+          // Like Section
+          _buildSection(
+            label: '선호',
+            isEnabled: isLikeEnabled,
+            controller: _likeController,
+            onToggle: () {
+              setState(() {
+                isLikeEnabled = !isLikeEnabled;
+              });
+            },
+            hintText: '• 예: 연어\n• 예: 명란',
           ),
           const SizedBox(height: 20),
 
-          // Content Input
-          Container(
-            height: 180,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(5),
-            ),
-            child: TextField(
-              controller: _contentController,
-              onChanged: _handleContentChange,
-              maxLines: null,
-              style: const TextStyle(
-                fontSize: 16,
-                height: 1.6,
-                color: AppColors.textPrimary,
-              ),
-              cursorColor: AppColors.textPrimary,
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                errorBorder: InputBorder.none,
-                disabledBorder: InputBorder.none,
-                hintText: '내용 입력하기',
-                hintStyle: TextStyle(color: Color(0xFF999999)),
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
+          // Dislike Section
+          _buildSection(
+            label: '비선호',
+            isEnabled: isDislikeEnabled,
+            controller: _dislikeController,
+            onToggle: () {
+              setState(() {
+                isDislikeEnabled = !isDislikeEnabled;
+              });
+            },
+            hintText: '• 예: 오이\n• 예: 당근',
           ),
           const SizedBox(height: 30),
 
@@ -283,6 +214,69 @@ class _PreferenceAddBottomSheetState extends State<PreferenceAddBottomSheet> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSection({
+    required String label,
+    required bool isEnabled,
+    required TextEditingController controller,
+    required VoidCallback onToggle,
+    required String hintText,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: onToggle,
+          behavior: HitTestBehavior.opaque,
+          child: Row(
+            children: [
+              Icon(
+                isEnabled ? Icons.check_circle : Icons.radio_button_unchecked,
+                size: 18,
+                color: isEnabled ? AppColors.primary : AppColors.textSecondary,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: AppTextStyles.body1.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: isEnabled
+                      ? AppColors.primary
+                      : AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (isEnabled) ...[
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppColors.inputBackground,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            padding: const EdgeInsets.all(12),
+            child: TextField(
+              controller: controller,
+              maxLines: null,
+              keyboardType: TextInputType.multiline,
+              style: AppTextStyles.body2,
+              onChanged: (val) => _handleContentChange(controller, val),
+              decoration: InputDecoration(
+                isDense: true,
+                border: InputBorder.none,
+                hintText: hintText,
+                hintStyle: AppTextStyles.caption.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

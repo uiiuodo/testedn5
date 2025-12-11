@@ -4,9 +4,7 @@ import 'package:intl/intl.dart';
 import 'my_record_controller.dart';
 import '../people/preference_add_bottom_sheet.dart';
 import '../../widgets/common/anniversary_bottom_sheet.dart';
-import '../../widgets/common/memo_bottom_sheet.dart';
-import '../../../data/model/anniversary.dart';
-import '../../../data/model/memo.dart';
+
 import '../../theme/app_colors.dart';
 
 class MyRecordScreen extends StatelessWidget {
@@ -395,13 +393,8 @@ class MyRecordScreen extends StatelessWidget {
                     iconColor: const Color(0xFFB0B0B0),
                   ),
                   GestureDetector(
-                    onTap: () => _showPreferenceBottomSheet(
-                      context,
-                      controller,
-                      category: '',
-                      isLike: true,
-                      initialContents: [],
-                    ),
+                    onTap: () =>
+                        _showPreferenceBottomSheet(context, controller),
                     child: const Icon(
                       Icons.add,
                       size: 20,
@@ -571,124 +564,91 @@ class MyRecordScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Column(
                 children: [
-                  if (likesList.isNotEmpty) ...[
+                  if (likesList.isNotEmpty || dislikesList.isNotEmpty) ...[
                     GestureDetector(
                       onTap: () {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (context) => PreferenceAddBottomSheet(
-                            initialCategory: title,
-                            initialIsLike: true,
-                            initialContents: likesList,
-                            onAdd: (newCategory, newIsLike, newContents) {
-                              controller.updatePreferenceGroup(
-                                title,
-                                true,
-                                newCategory,
-                                newIsLike,
-                                newContents,
-                              );
-                              Get.back();
-                            },
-                          ),
+                        _showPreferenceBottomSheet(
+                          context,
+                          controller,
+                          category: title,
+                          initialLikes: likesList,
+                          initialDislikes: dislikesList,
                         );
                       },
-                      child: Container(
-                        width: double.infinity,
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: const Color(0xFF2F80ED), // Blue
-                            width: 1,
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              '선호',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF2F80ED),
+                      child: Column(
+                        children: [
+                          if (likesList.isNotEmpty)
+                            Container(
+                              width: double.infinity,
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: const Color(0xFF2F80ED), // Blue
+                                  width: 1,
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    '선호',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF2F80ED),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    likes,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: AppColors.textPrimary,
+                                      height: 1.5,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              likes,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: AppColors.textPrimary,
-                                height: 1.5,
+                          if (dislikesList.isNotEmpty)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: const Color(0xFF333333), // Dark Gray
+                                  width: 1,
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    '비선호',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF333333),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    dislikes,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: AppColors.textPrimary,
+                                      height: 1.5,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                  if (dislikesList.isNotEmpty) ...[
-                    GestureDetector(
-                      onTap: () {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (context) => PreferenceAddBottomSheet(
-                            initialCategory: title,
-                            initialIsLike: false,
-                            initialContents: dislikesList,
-                            onAdd: (newCategory, newIsLike, newContents) {
-                              controller.updatePreferenceGroup(
-                                title,
-                                false,
-                                newCategory,
-                                newIsLike,
-                                newContents,
-                              );
-                              Get.back();
-                            },
-                          ),
-                        );
-                      },
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: const Color(0xFF333333), // Dark Gray
-                            width: 1,
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              '비선호',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF333333),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              dislikes,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: AppColors.textPrimary,
-                                height: 1.5,
-                              ),
-                            ),
-                          ],
-                        ),
+                        ],
                       ),
                     ),
                   ],
@@ -722,9 +682,9 @@ class MyRecordScreen extends StatelessWidget {
   void _showPreferenceBottomSheet(
     BuildContext context,
     MyRecordController controller, {
-    required String category,
-    required bool isLike,
-    required List<String> initialContents,
+    String? category,
+    List<String>? initialLikes,
+    List<String>? initialDislikes,
   }) {
     showModalBottomSheet(
       context: context,
@@ -732,10 +692,16 @@ class MyRecordScreen extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (context) => PreferenceAddBottomSheet(
         initialCategory: category,
-        initialIsLike: isLike,
-        initialContents: initialContents,
-        onAdd: (cat, like, contents) {
-          controller.addPreferences(cat, like, contents);
+        initialLikes: initialLikes,
+        initialDislikes: initialDislikes,
+        onAdd: (cat, likes, dislikes) {
+          if (category != null) {
+            // Update existing
+            controller.updatePreferenceGroup(category, cat, likes, dislikes);
+          } else {
+            // Add new
+            controller.addPreferences(cat, likes, dislikes);
+          }
           Get.back();
         },
       ),

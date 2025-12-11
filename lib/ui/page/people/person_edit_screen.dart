@@ -716,10 +716,17 @@ class PersonEditScreen extends StatelessWidget {
                   children: grouped.entries.map((entry) {
                     final category = entry.key;
                     final prefs = entry.value;
-                    final likes = prefs.where((p) => p.like != null).toList();
-                    final dislikes = prefs
-                        .where((p) => p.dislike != null)
+                    final likesList = prefs
+                        .where((p) => p.like != null)
+                        .map((p) => p.like!)
                         .toList();
+                    final dislikesList = prefs
+                        .where((p) => p.dislike != null)
+                        .map((p) => p.dislike!)
+                        .toList();
+
+                    final likes = likesList.join(', ');
+                    final dislikes = dislikesList.join(', ');
 
                     final isExpanded = controller.expandedCategories.contains(
                       category,
@@ -816,158 +823,106 @@ class PersonEditScreen extends StatelessWidget {
                               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                               child: Column(
                                 children: [
-                                  if (likes.isNotEmpty) ...[
+                                  if (likesList.isNotEmpty ||
+                                      dislikesList.isNotEmpty) ...[
                                     GestureDetector(
                                       onTap: () {
-                                        showModalBottomSheet(
-                                          context: context,
-                                          isScrollControlled: true,
-                                          backgroundColor: Colors.transparent,
-                                          builder: (context) =>
-                                              PreferenceAddBottomSheet(
-                                                initialCategory: category,
-                                                initialIsLike: true,
-                                                initialContents: likes
-                                                    .map((p) => p.like!)
-                                                    .toList(),
-                                                onAdd:
-                                                    (
-                                                      newCategory,
-                                                      newIsLike,
-                                                      newContents,
-                                                    ) {
-                                                      controller
-                                                          .updatePreferenceGroup(
-                                                            category,
-                                                            true,
-                                                            newCategory,
-                                                            newIsLike,
-                                                            newContents,
-                                                          );
-                                                      Get.back();
-                                                    },
-                                              ),
+                                        _showPreferenceBottomSheet(
+                                          context,
+                                          controller,
+                                          category: category,
+                                          initialLikes: likesList,
+                                          initialDislikes: dislikesList,
                                         );
                                       },
-                                      child: Container(
-                                        width: double.infinity,
-                                        margin: const EdgeInsets.only(
-                                          bottom: 8,
-                                        ),
-                                        padding: const EdgeInsets.all(16),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          border: Border.all(
-                                            color: const Color(
-                                              0xFF2F80ED,
-                                            ), // Blue
-                                            width: 1,
-                                          ),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            const Text(
-                                              '선호',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                                color: Color(0xFF2F80ED),
+                                      child: Column(
+                                        children: [
+                                          if (likesList.isNotEmpty)
+                                            Container(
+                                              width: double.infinity,
+                                              margin: const EdgeInsets.only(
+                                                bottom: 8,
+                                              ),
+                                              padding: const EdgeInsets.all(16),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: const Color(
+                                                    0xFF2F80ED,
+                                                  ), // Blue
+                                                  width: 1,
+                                                ),
+                                              ),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  const Text(
+                                                    '선호',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Color(0xFF2F80ED),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  Text(
+                                                    likes,
+                                                    style: const TextStyle(
+                                                      fontSize: 14,
+                                                      color:
+                                                          AppColors.textPrimary,
+                                                      height: 1.5,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                             ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              likes
-                                                  .map((p) => p.like!)
-                                                  .join(', '),
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                                color: AppColors.textPrimary,
-                                                height: 1.5,
+                                          if (dislikesList.isNotEmpty)
+                                            Container(
+                                              width: double.infinity,
+                                              padding: const EdgeInsets.all(16),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: const Color(
+                                                    0xFF333333,
+                                                  ), // Dark Gray
+                                                  width: 1,
+                                                ),
+                                              ),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  const Text(
+                                                    '비선호',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Color(0xFF333333),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  Text(
+                                                    dislikes,
+                                                    style: const TextStyle(
+                                                      fontSize: 14,
+                                                      color:
+                                                          AppColors.textPrimary,
+                                                      height: 1.5,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                             ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                  if (dislikes.isNotEmpty) ...[
-                                    GestureDetector(
-                                      onTap: () {
-                                        showModalBottomSheet(
-                                          context: context,
-                                          isScrollControlled: true,
-                                          backgroundColor: Colors.transparent,
-                                          builder: (context) =>
-                                              PreferenceAddBottomSheet(
-                                                initialCategory: category,
-                                                initialIsLike: false,
-                                                initialContents: dislikes
-                                                    .map((p) => p.dislike!)
-                                                    .toList(),
-                                                onAdd:
-                                                    (
-                                                      newCategory,
-                                                      newIsLike,
-                                                      newContents,
-                                                    ) {
-                                                      controller
-                                                          .updatePreferenceGroup(
-                                                            category,
-                                                            false,
-                                                            newCategory,
-                                                            newIsLike,
-                                                            newContents,
-                                                          );
-                                                      Get.back();
-                                                    },
-                                              ),
-                                        );
-                                      },
-                                      child: Container(
-                                        width: double.infinity,
-                                        padding: const EdgeInsets.all(16),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          border: Border.all(
-                                            color: const Color(
-                                              0xFF333333,
-                                            ), // Dark Gray
-                                            width: 1,
-                                          ),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            const Text(
-                                              '비선호',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                                color: Color(0xFF333333),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              dislikes
-                                                  .map((p) => p.dislike!)
-                                                  .join(', '),
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                                color: AppColors.textPrimary,
-                                                height: 1.5,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                        ],
                                       ),
                                     ),
                                   ],
@@ -988,17 +943,7 @@ class PersonEditScreen extends StatelessWidget {
               _buildAddButton(
                 label: '취향 기록 추가하기',
                 onTap: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (context) => PreferenceAddBottomSheet(
-                      onAdd: (category, isLike, contents) {
-                        controller.addPreferences(category, isLike, contents);
-                        Get.back();
-                      },
-                    ),
-                  );
+                  _showPreferenceBottomSheet(context, controller);
                 },
               ),
               const SizedBox(height: 40),
@@ -1053,6 +998,35 @@ class PersonEditScreen extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  void _showPreferenceBottomSheet(
+    BuildContext context,
+    PersonEditController controller, {
+    String? category,
+    List<String>? initialLikes,
+    List<String>? initialDislikes,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => PreferenceAddBottomSheet(
+        initialCategory: category,
+        initialLikes: initialLikes,
+        initialDislikes: initialDislikes,
+        onAdd: (cat, likes, dislikes) {
+          if (category != null) {
+            // Update existing
+            controller.updatePreferenceGroup(category, cat, likes, dislikes);
+          } else {
+            // Add new
+            controller.addPreferences(cat, likes, dislikes);
+          }
+          Get.back();
+        },
+      ),
     );
   }
 
