@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import 'package:table_calendar/table_calendar.dart';
 import 'person_calendar_controller.dart';
 import '../../../../data/model/schedule.dart';
@@ -27,14 +26,13 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 20),
-                      // Header: Back Icon, Edit Icon, Year/Month
+                      // Header
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24.0),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Left: Back Button & Return to Today
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -48,9 +46,8 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                                 ),
                                 const SizedBox(height: 12),
                                 Obx(() {
-                                  if (controller.isOnTodayMonth) {
+                                  if (controller.isOnTodayMonth)
                                     return const SizedBox.shrink();
-                                  }
                                   return GestureDetector(
                                     onTap: controller.goToToday,
                                     child: Container(
@@ -88,12 +85,9 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                                 }),
                               ],
                             ),
-
-                            // Right: Edit Icon + Year + Month
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                // Edit Icon (Pen)
                                 Obx(
                                   () => GestureDetector(
                                     onTap: controller.toggleEditMode,
@@ -111,16 +105,13 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                                             : Icons.edit_outlined,
                                         size: 20,
                                         color: controller.isEditMode.value
-                                            ? Colors
-                                                  .black // Changed to black to match Group Calendar
+                                            ? Colors.black
                                             : const Color(0xFF979797),
                                       ),
                                     ),
                                   ),
                                 ),
                                 const SizedBox(height: 4),
-
-                                // Year (e.g., 2025)
                                 Obx(
                                   () => Text(
                                     '${controller.focusedDay.value.year}',
@@ -133,7 +124,6 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                                     ),
                                   ),
                                 ),
-                                // Month (e.g., 11)
                                 Obx(
                                   () => Text(
                                     '${controller.focusedDay.value.month}',
@@ -166,7 +156,7 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                           },
                           headerVisible: false,
                           daysOfWeekHeight: 20,
-                          rowHeight: 70,
+                          rowHeight: 52, // 1) Modified rowHeight
                           calendarFormat: CalendarFormat.month,
                           availableGestures: AvailableGestures.horizontalSwipe,
                           daysOfWeekStyle: const DaysOfWeekStyle(
@@ -200,38 +190,31 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                               }
                               return null;
                             },
-                            defaultBuilder: (context, day, focusedDay) {
-                              return _buildDayCell(controller, day, false);
-                            },
-                            selectedBuilder: (context, day, focusedDay) {
-                              return _buildDayCell(controller, day, true);
-                            },
-                            todayBuilder: (context, day, focusedDay) {
-                              return _buildDayCell(
-                                controller,
-                                day,
-                                false,
-                                isToday: true,
-                              );
-                            },
-                            outsideBuilder: (context, day, focusedDay) {
-                              return _buildDayCell(
-                                controller,
-                                day,
-                                false,
-                                isOutside: true,
-                              );
-                            },
-                            markerBuilder: (context, day, events) {
-                              return const SizedBox.shrink();
-                            },
+                            defaultBuilder: (context, day, focusedDay) =>
+                                _buildDayCell(controller, day, false),
+                            selectedBuilder: (context, day, focusedDay) =>
+                                _buildDayCell(controller, day, true),
+                            todayBuilder: (context, day, focusedDay) =>
+                                _buildDayCell(
+                                  controller,
+                                  day,
+                                  false,
+                                  isToday: true,
+                                ),
+                            outsideBuilder: (context, day, focusedDay) =>
+                                _buildDayCell(
+                                  controller,
+                                  day,
+                                  false,
+                                  isOutside: true,
+                                ),
+                            markerBuilder: (context, day, events) =>
+                                const SizedBox.shrink(),
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 20),
-
-                      // Add Schedule Button (Only for Planned Schedules as per request)
+                      // Add Schedule Button
                       Center(
                         child: GestureDetector(
                           onTap: () async {
@@ -290,10 +273,8 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 40),
-
-                      // Planned Schedules List
+                      // Planned List
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 52.0),
                         child: Column(
@@ -363,7 +344,6 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                                             children: [
                                               GestureDetector(
                                                 onTap: () async {
-                                                  // Edit
                                                   final result =
                                                       await Get.bottomSheet(
                                                         ScheduleEditScreen(
@@ -378,13 +358,12 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                                                             Colors.transparent,
                                                       );
                                                   if (result != null &&
-                                                      result is Schedule) {
+                                                      result is Schedule)
                                                     await controller
                                                         .updateSchedule(result);
-                                                  } else {
+                                                  else
                                                     await controller
                                                         .fetchSchedules();
-                                                  }
                                                 },
                                                 child: const Padding(
                                                   padding: EdgeInsets.all(4.0),
@@ -398,7 +377,6 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                                               const SizedBox(width: 8),
                                               GestureDetector(
                                                 onTap: () {
-                                                  // Delete
                                                   Get.dialog(
                                                     AlertDialog(
                                                       title: const Text(
@@ -462,7 +440,6 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                 ),
               ),
             ),
-            // Bottom Navigation Bar
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -480,10 +457,9 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                   type: BottomNavigationBarType.fixed,
                   backgroundColor: Colors.white,
                   elevation: 0,
-                  currentIndex: 1, // Calendar tab
+                  currentIndex: 1,
                   onTap: (index) {
-                    if (index == 0)
-                      Get.back(); // Go back to home if Home tapped
+                    if (index == 0) Get.back();
                   },
                   selectedItemColor: const Color(0xFF404040),
                   unselectedItemColor: const Color(0xFFDDDDDD),
@@ -526,17 +502,12 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
     bool isOutside = false,
   }) {
     final items = controller.getDayItems(day);
-
-    // Day number color
     Color dayColor = const Color(0xFF4A4A4A);
-    if (day.weekday == DateTime.sunday) {
+    if (day.weekday == DateTime.sunday)
       dayColor = const Color(0xFFFF0000);
-    } else if (day.weekday == DateTime.saturday) {
+    else if (day.weekday == DateTime.saturday)
       dayColor = const Color(0xFF0084FF);
-    }
-    if (isOutside) {
-      dayColor = dayColor.withOpacity(0.3);
-    }
+    if (isOutside) dayColor = dayColor.withOpacity(0.3);
 
     return Container(
       margin: const EdgeInsets.all(2),
@@ -550,7 +521,6 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Day Number
           Padding(
             padding: const EdgeInsets.only(top: 4, left: 6),
             child: Text(
@@ -563,58 +533,49 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
             ),
           ),
           const SizedBox(height: 2),
-
-          // Events List
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ...items.take(3).map((item) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 2),
-                      child: Row(
-                        children: [
-                          // Color Bar
-                          Container(
-                            width: 2,
-                            height: 10,
-                            color: item.groupColor != null
-                                ? Color(item.groupColor!)
-                                : const Color(0xFFD9D9D9),
-                          ),
-                          const SizedBox(width: 4),
-                          // Title
-                          Expanded(
-                            child: Text(
-                              item.title,
-                              style: const TextStyle(
-                                fontSize: 9,
-                                color: Color(0xFF4A4A4A),
-                                fontWeight: FontWeight.w400,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              maxLines: 1,
-                            ),
-                          ),
-                        ],
+          // Event List
+          Container(
+            height: 22, // Requested: 22px fixed height
+            margin: const EdgeInsets.only(
+              bottom: 2,
+            ), // Requested: margin bottom <= 2
+            padding: const EdgeInsets.symmetric(
+              horizontal: 4,
+            ), // Requested: horizontal 4, vertical 0
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min, // Requested: mainAxisSize min
+              children: [
+                ...items.take(1).map((item) {
+                  // take(1) to fit in 22px (font 10 ~ 14px height)
+                  return Row(
+                    children: [
+                      Container(
+                        width: 2,
+                        height: 10, // Adjust to match font scale
+                        color: item.groupColor != null
+                            ? Color(item.groupColor!)
+                            : const Color(0xFFD9D9D9),
                       ),
-                    );
-                  }),
-                  if (items.length > 3)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 6),
-                      child: Text(
-                        '+${items.length - 3}',
-                        style: const TextStyle(
-                          fontSize: 8,
-                          color: Color(0xFF9D9D9D),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          item.title,
+                          style: const TextStyle(
+                            fontSize: 10, // Requested: fontSize 10
+                            color: Color(0xFF4A4A4A),
+                            fontWeight: FontWeight.w400,
+                            overflow:
+                                TextOverflow.ellipsis, // Requested: ellipsis
+                            height: 1.0,
+                          ),
+                          maxLines: 1, // Requested: maxLines 1
                         ),
                       ),
-                    ),
-                ],
-              ),
+                    ],
+                  );
+                }),
+              ],
             ),
           ),
         ],

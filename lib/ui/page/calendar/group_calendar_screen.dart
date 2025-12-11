@@ -234,7 +234,7 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                                 },
 
                                 daysOfWeekHeight: 20,
-                                rowHeight: 70,
+                                rowHeight: 52,
                                 daysOfWeekStyle: const DaysOfWeekStyle(
                                   decoration: BoxDecoration(
                                     color: Colors.white,
@@ -799,56 +799,47 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
           const SizedBox(height: 2),
 
           // Events List
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ...items.take(3).map((item) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 2),
-                      child: Row(
-                        children: [
-                          // Color Bar
-                          Container(
-                            width: 2,
-                            height: 10,
-                            color: item.groupColor != null
-                                ? Color(item.groupColor!)
-                                : const Color(0xFFD9D9D9),
-                          ),
-                          const SizedBox(width: 4),
-                          // Title
-                          Expanded(
-                            child: Text(
-                              item.title,
-                              style: const TextStyle(
-                                fontSize: 9,
-                                color: Color(0xFF4A4A4A),
-                                fontWeight: FontWeight.w400,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              maxLines: 1,
-                            ),
-                          ),
-                        ],
+          Container(
+            height: 22, // Fixed height 22px
+            margin: const EdgeInsets.only(bottom: 2), // Margin bottom 2px
+            padding: const EdgeInsets.symmetric(
+              horizontal: 4,
+            ), // Padding horizontal 4
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min, // Min size to avoid overflow
+              children: [
+                ...items.take(1).map((item) {
+                  // Limit to 1 item to fit in 22px
+                  return Row(
+                    children: [
+                      // Color Bar
+                      Container(
+                        width: 2,
+                        height: 10,
+                        color: item.groupColor != null
+                            ? Color(item.groupColor!)
+                            : const Color(0xFFD9D9D9),
                       ),
-                    );
-                  }),
-                  if (items.length > 3)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 6),
-                      child: Text(
-                        '+${items.length - 3}',
-                        style: const TextStyle(
-                          fontSize: 8,
-                          color: Color(0xFF9D9D9D),
+                      const SizedBox(width: 4),
+                      // Title
+                      Expanded(
+                        child: Text(
+                          item.title,
+                          style: const TextStyle(
+                            fontSize: 10, // Font size 10
+                            color: Color(0xFF4A4A4A),
+                            fontWeight: FontWeight.w400,
+                            overflow: TextOverflow.ellipsis, // Ellipsis
+                            height: 1.0,
+                          ),
+                          maxLines: 1, // Max lines 1
                         ),
                       ),
-                    ),
-                ],
-              ),
+                    ],
+                  );
+                }),
+              ],
             ),
           ),
         ],
