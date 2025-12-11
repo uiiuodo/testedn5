@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../../../../data/model/schedule.dart';
 import '../../../../data/repository/schedule_repository.dart';
+import '../../home/home_controller.dart';
 import '../schedule_edit_screen.dart';
 
 class PersonCalendarController extends GetxController {
@@ -102,7 +103,42 @@ class PersonCalendarController extends GetxController {
 
   List<Schedule> getEventsForDay(DateTime day) {
     final normalized = DateTime(day.year, day.month, day.day);
-    return events[normalized] ?? [];
+    final dayEvents = events[normalized] ?? [];
+
+    final List<Schedule> combined = [...dayEvents];
+
+    try {
+      if (Get.isRegistered<HomeController>()) {
+        final homeController = Get.find<HomeController>();
+        final person = homeController.people.firstWhereOrNull(
+          (p) => p.id == personId,
+        );
+
+        if (person != null) {
+          for (final anniv in person.anniversaries) {
+            if (anniv.date.month == day.month && anniv.date.day == day.day) {
+              combined.add(
+                Schedule(
+                  id: 'anniv_${anniv.id}_${day.year}',
+                  title: anniv.title,
+                  startDateTime: day,
+                  endDateTime: day,
+                  allDay: true,
+                  type: ScheduleType.anniversary,
+                  personIds: [personId],
+                  groupId: null, // Gray
+                  isAnniversary: true,
+                ),
+              );
+            }
+          }
+        }
+      }
+    } catch (e) {
+      // Ignore
+    }
+
+    return combined;
   }
 
   void onDaySelected(DateTime selected, DateTime focused) {
@@ -115,16 +151,14 @@ class PersonCalendarController extends GetxController {
   }
 
   Future<void> addSchedule([Schedule? result]) async {
-    if (result == null) {
-      result = await Get.to(
-        () => ScheduleEditScreen(
-          initialDate: selectedDay.value,
-          personId: personId,
-        ),
-      );
-    }
+    result ??= await Get.to(
+      () => ScheduleEditScreen(
+        initialDate: selectedDay.value,
+        personId: personId,
+      ),
+    );
 
-    if (result != null && result is Schedule) {
+    if (result != null) {
       await _scheduleRepository.addSchedule(result);
       fetchSchedules();
     }

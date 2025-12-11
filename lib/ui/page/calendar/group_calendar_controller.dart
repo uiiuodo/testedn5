@@ -97,12 +97,13 @@ class GroupCalendarController extends GetxController {
 
     items.addAll(eventsForDay);
 
-    // 2. Birthdays
+    // 2. Birthdays & Anniversaries
     final filteredPeople = selectedGroupId.value == 'all'
         ? people
         : people.where((p) => p.groupId == selectedGroupId.value).toList();
 
     for (final person in filteredPeople) {
+      // Birthdays
       if (person.birthDate != null) {
         final birthDate = person.birthDate!;
         if (birthDate.month == day.month && birthDate.day == day.day) {
@@ -131,6 +132,26 @@ class GroupCalendarController extends GetxController {
               ),
             );
           }
+        }
+      }
+
+      // Anniversaries
+      for (final anniv in person.anniversaries) {
+        if (anniv.date.month == day.month && anniv.date.day == day.day) {
+          items.add(
+            Schedule(
+              id: 'anniv_${anniv.id}_${day.year}',
+              title: '${person.name} - ${anniv.title}',
+              startDateTime: day,
+              endDateTime: day,
+              allDay: true,
+              type: ScheduleType.anniversary,
+              personIds: [person.id],
+              groupId: null, // Gray color for anniversaries
+              isAnniversary: true,
+              // Other required fields
+            ),
+          );
         }
       }
     }
@@ -175,7 +196,7 @@ class GroupCalendarController extends GetxController {
       final homeController = Get.find<HomeController>();
       homeController.addGroup(name, colorValue);
     } catch (e) {
-      print('Error adding group: $e');
+      // print('Error adding group: $e');
     }
   }
 }
