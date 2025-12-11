@@ -12,6 +12,7 @@ import 'schedule_edit_screen.dart';
 import '../../widgets/common/refreshable_layout.dart';
 import '../../widgets/common/group_management_bottom_sheet.dart';
 import '../../widgets/calendar/day_events_sheet.dart';
+import '../../widgets/calendar/planned_task_list.dart';
 
 class GroupCalendarScreen extends StatefulWidget {
   const GroupCalendarScreen({super.key});
@@ -215,8 +216,14 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                         children: [
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: Obx(
-                              () => TableCalendar<Schedule>(
+                            child: Obx(() {
+                              // Explicitly dependency on schedules and people
+                              // ignore: unused_local_variable
+                              final _sc = controller.schedules.length;
+                              // ignore: unused_local_variable
+                              final _pp = controller.people.length;
+
+                              return TableCalendar<Schedule>(
                                 firstDay: DateTime.utc(2020, 1, 1),
                                 lastDay: DateTime.utc(2030, 12, 31),
                                 focusedDay: controller.focusedDay.value,
@@ -375,8 +382,8 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                                     return const SizedBox.shrink();
                                   },
                                 ),
-                              ),
-                            ),
+                              );
+                            }),
                           ),
                           const SizedBox(height: 20),
                           const Divider(thickness: 1, color: Color(0xFFF5F5F5)),
@@ -395,7 +402,8 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                                     initialDate:
                                         controller.selectedDay.value ??
                                         DateTime.now(),
-                                    isPlanned: true,
+                                    isPlanned:
+                                        false, // Always false for calendar events
                                     // No personId for group schedule
                                     personId: null,
                                   ),
@@ -446,48 +454,16 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                           ),
                           const SizedBox(height: 40),
 
-                          // Planned Schedules List
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 52),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      width: 9,
-                                      height: 9,
-                                      color: const Color(0xFFB0B0B0),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    const Text(
-                                      '계획해야 하는 일정',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w500,
-                                        color: Color(0xFF9D9D9D),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                                Obx(
-                                  () => Column(
-                                    children: controller
-                                        .filteredPlannedSchedules
-                                        .map(
-                                          (schedule) => _buildScheduleCard(
-                                            controller,
-                                            schedule,
-                                          ),
-                                        )
-                                        .toList(),
-                                  ),
-                                ),
-                                const SizedBox(height: 40),
-                              ],
+                          // Planned Tasks List
+                          Obx(
+                            () => PlannedTaskList(
+                              tasks: controller.plannedTasks.toList(),
+                              onAdd: controller.addPlannedTask,
+                              onUpdate: controller.updatePlannedTask,
+                              onDelete: controller.deletePlannedTask,
                             ),
                           ),
+                          const SizedBox(height: 40),
                         ],
                       ),
                     ),
@@ -922,132 +898,6 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                 ),
         ),
       ],
-    );
-  }
-
-  Widget _buildScheduleCard(
-    GroupCalendarController controller,
-    Schedule schedule,
-  ) {
-    // Split title by newline to get line1 and line2 if possible
-    final lines = schedule.title.split('\n');
-    final line1 = lines.isNotEmpty ? lines[0] : schedule.title;
-    final line2 = lines.length > 1 ? lines[1] : '';
-
-    return GestureDetector(
-      onTap: () async {
-        // If in edit mode, tap could also trigger edit, but user said:
-        // "If currently tap does nothing, keep it that way."
-        // "In Edit Mode, show controls."
-        // So we only add controls in Edit Mode.
-      },
-      child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF5F5F5),
-          borderRadius: BorderRadius.circular(13),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    line1,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w300,
-                      color: Color(0xFF464646),
-                      height: 1.5,
-                    ),
-                  ),
-                  if (line2.isNotEmpty)
-                    Text(
-                      line2,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w300,
-                        color: Color(0xFF464646),
-                        height: 1.5,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            // Edit/Delete Controls
-            if (controller.isEditMode.value)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  GestureDetector(
-                    onTap: () async {
-                      // Edit
-                      final result = await Get.bottomSheet(
-                        ScheduleEditScreen(
-                          schedule: schedule,
-                          isPlanned: true,
-                          personId: null,
-                        ),
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                      );
-                      if (result != null && result is Schedule) {
-                        controller.updateSchedule(result);
-                      }
-                    },
-                    child: const Padding(
-                      padding: EdgeInsets.all(4.0),
-                      child: Icon(
-                        Icons.edit,
-                        size: 16,
-                        color: Color(0xFF9D9D9D),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () {
-                      // Delete
-                      Get.dialog(
-                        AlertDialog(
-                          title: const Text('일정 삭제'),
-                          content: const Text('이 일정을 삭제하시겠습니까?'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Get.back(),
-                              child: const Text('취소'),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                controller.deletePlannedSchedule(schedule.id);
-                                Get.back();
-                              },
-                              child: const Text(
-                                '삭제',
-                                style: TextStyle(color: Colors.red),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                    child: const Padding(
-                      padding: EdgeInsets.all(4.0),
-                      child: Icon(
-                        Icons.delete,
-                        size: 16,
-                        color: Color(0xFF9D9D9D),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-          ],
-        ),
-      ),
     );
   }
 }

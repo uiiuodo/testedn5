@@ -6,6 +6,7 @@ import '../data/model/anniversary.dart';
 import '../data/model/memo.dart';
 import '../data/model/preference_category.dart';
 import '../data/model/schedule.dart';
+import '../data/model/planned_task.dart';
 
 class DataService extends GetxService {
   Future<DataService> init() async {
@@ -20,11 +21,13 @@ class DataService extends GetxService {
     Hive.registerAdapter(PreferenceCategoryAdapter());
     Hive.registerAdapter(ScheduleAdapter());
     Hive.registerAdapter(ScheduleTypeAdapter());
+    Hive.registerAdapter(PlannedTaskAdapter());
 
     // Open Boxes
     await Hive.openBox<Person>('people');
     await Hive.openBox<Group>('groups');
     await Hive.openBox<Schedule>('schedules');
+    await Hive.openBox<PlannedTask>('planned_tasks');
 
     // Initialize default groups if empty
     final groupBox = Hive.box<Group>('groups');

@@ -7,6 +7,8 @@ import '../../../../service/anniversary_service.dart';
 import '../../../../data/repository/schedule_repository.dart';
 import '../../../../data/repository/person_repository.dart';
 import '../home/home_controller.dart';
+import '../../../../data/repository/planned_task_repository.dart';
+import '../../../../data/model/planned_task.dart';
 
 class GroupCalendarController extends GetxController {
   final Rx<DateTime> focusedDay = DateTime.now().obs;
@@ -22,7 +24,10 @@ class GroupCalendarController extends GetxController {
   // People - For Birthdays
   final RxList<Person> people = <Person>[].obs;
 
+  final RxList<PlannedTask> plannedTasks = <PlannedTask>[].obs;
+
   final ScheduleRepository _scheduleRepository = ScheduleRepository();
+  final PlannedTaskRepository _plannedTaskRepository = PlannedTaskRepository();
   final PersonRepository _personRepository = PersonRepository();
 
   @override
@@ -30,6 +35,13 @@ class GroupCalendarController extends GetxController {
     super.onInit();
     fetchSchedules();
     fetchPeople();
+    fetchPlannedTasks();
+  }
+
+  void fetchPlannedTasks() {
+    plannedTasks.value = _plannedTaskRepository.getTasksByGroup(
+      selectedGroupId.value,
+    );
   }
 
   Future<void> fetchSchedules() async {
@@ -55,17 +67,9 @@ class GroupCalendarController extends GetxController {
     return schedules.where((s) => s.groupId == selectedGroupId.value).toList();
   }
 
-  List<Schedule> get filteredPlannedSchedules {
-    final planned = schedules.where((s) => s.isPlanned).toList();
-
-    if (selectedGroupId.value == 'all') {
-      return planned;
-    }
-    return planned.where((s) => s.groupId == selectedGroupId.value).toList();
-  }
-
   void selectGroup(String groupId) {
     selectedGroupId.value = groupId;
+    fetchPlannedTasks(); // Reload planned tasks for new group
     update();
   }
 
@@ -164,9 +168,26 @@ class GroupCalendarController extends GetxController {
     return items;
   }
 
-  Future<void> deletePlannedSchedule(String id) async {
-    await _scheduleRepository.deleteSchedule(id);
-    fetchSchedules();
+  Future<void> addPlannedTask(String content) async {
+    final newTask = PlannedTask(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      content: content,
+      createdAt: DateTime.now(),
+      groupId: selectedGroupId.value == 'all' ? null : selectedGroupId.value,
+    );
+    await _plannedTaskRepository.addTask(newTask);
+    fetchPlannedTasks();
+  }
+
+  Future<void> updatePlannedTask(PlannedTask task, String newContent) async {
+    final updatedTask = task.copyWith(content: newContent);
+    await _plannedTaskRepository.updateTask(updatedTask);
+    fetchPlannedTasks();
+  }
+
+  Future<void> deletePlannedTask(String id) async {
+    await _plannedTaskRepository.deleteTask(id);
+    fetchPlannedTasks();
   }
 
   Future<void> updateSchedule(Schedule schedule) async {

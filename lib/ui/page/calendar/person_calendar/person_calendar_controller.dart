@@ -5,12 +5,17 @@ import '../../../../data/repository/schedule_repository.dart';
 import '../../../../service/anniversary_service.dart';
 import '../../home/home_controller.dart';
 import '../schedule_edit_screen.dart';
+import '../../../../data/repository/planned_task_repository.dart';
+import '../../../../data/model/planned_task.dart';
 
 class PersonCalendarController extends GetxController {
   final String personId;
   final ScheduleRepository _scheduleRepository = Get.find<ScheduleRepository>();
   final DraggableScrollableController sheetController =
       DraggableScrollableController();
+
+  final PlannedTaskRepository _plannedTaskRepository = PlannedTaskRepository();
+  final RxList<PlannedTask> plannedTasks = <PlannedTask>[].obs;
 
   PersonCalendarController({required this.personId});
 
@@ -22,15 +27,7 @@ class PersonCalendarController extends GetxController {
         focusedDay.value.month == now.month;
   }
 
-  // Planned schedules (Important or Explicitly Planned)
-  List<Schedule> get plannedSchedules {
-    // Return all events that are marked as important or planned
-    // Flatten the events map
-    final all = events.values.expand((l) => l).toSet().toList();
-    // Sort by date?
-    all.sort((a, b) => a.startDateTime.compareTo(b.startDateTime));
-    return all.where((s) => s.isImportant || s.isPlanned).toList();
-  }
+  // Planned tasks are now handled by plannedTasks list and PlannedTaskRepository
 
   final Rx<DateTime> focusedDay = DateTime.now().obs;
   final Rx<DateTime?> selectedDay = Rx<DateTime?>(null);
@@ -44,6 +41,35 @@ class PersonCalendarController extends GetxController {
     super.onInit();
     selectedDay.value = focusedDay.value;
     fetchSchedules();
+    selectedDay.value = focusedDay.value;
+    fetchSchedules();
+    fetchPlannedTasks();
+  }
+
+  void fetchPlannedTasks() {
+    plannedTasks.value = _plannedTaskRepository.getTasksByPerson(personId);
+  }
+
+  Future<void> addPlannedTask(String content) async {
+    final newTask = PlannedTask(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      content: content,
+      createdAt: DateTime.now(),
+      personId: personId,
+    );
+    await _plannedTaskRepository.addTask(newTask);
+    fetchPlannedTasks();
+  }
+
+  Future<void> updatePlannedTask(PlannedTask task, String newContent) async {
+    final updatedTask = task.copyWith(content: newContent);
+    await _plannedTaskRepository.updateTask(updatedTask);
+    fetchPlannedTasks();
+  }
+
+  Future<void> deletePlannedTask(String id) async {
+    await _plannedTaskRepository.deleteTask(id);
+    fetchPlannedTasks();
   }
 
   Future<void> fetchSchedules() async {
