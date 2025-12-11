@@ -12,7 +12,16 @@ class MyRecordController extends GetxController {
   static const String myId = 'me';
 
   final Rx<Person?> person = Rx<Person?>(null);
-  final RxBool isEditMode = false.obs;
+  final RxBool isDeleteMode = false.obs;
+
+  // Editable Fields
+  final Rx<DateTime?> birthDate = Rx<DateTime?>(null);
+  final RxList<Anniversary> anniversaries = <Anniversary>[].obs;
+  final RxList<Memo> memos = <Memo>[].obs;
+  final RxList<PreferenceCategory> preferences = <PreferenceCategory>[].obs;
+
+  // UI State
+  final RxSet<String> expandedCategories = <String>{}.obs;
 
   @override
   void onInit() {
@@ -33,21 +42,45 @@ class MyRecordController extends GetxController {
       _personRepository.addPerson(me);
     }
     person.value = me;
+
+    // Initialize editable fields
+    birthDate.value = me.birthDate;
+    anniversaries.assignAll(me.anniversaries);
+    memos.assignAll(me.memos);
+    preferences.assignAll(me.preferences);
+
+    // Initialize expanded categories (expand all by default)
+    final categories = me.preferences.map((e) => e.title).toSet();
+    expandedCategories.assignAll(categories);
   }
 
-  void toggleEditMode() {
-    if (isEditMode.value) {
-      saveMyRecord();
-    } else {
-      isEditMode.value = true;
-    }
+  void toggleDeleteMode() {
+    isDeleteMode.value = !isDeleteMode.value;
   }
 
   Future<void> saveMyRecord() async {
     if (person.value == null) return;
+
     try {
-      await _personRepository.updatePerson(person.value!);
-      isEditMode.value = false;
+      final updatedPerson = Person(
+        id: person.value!.id,
+        name: person.value!.name,
+        birthDate: birthDate.value,
+        phone: person.value!.phone,
+        address: person.value!.address,
+        email: person.value!.email,
+        groupId: person.value!.groupId,
+        anniversaries: anniversaries,
+        memos: memos,
+        preferences: preferences,
+      );
+
+      await _personRepository.updatePerson(updatedPerson);
+      person.value = updatedPerson;
+
+      // Exit delete mode after save (optional, but good UX)
+      isDeleteMode.value = false;
+
       Get.snackbar(
         '저장 완료',
         '나에 대한 기록이 저장되었습니다.',
@@ -67,189 +100,112 @@ class MyRecordController extends GetxController {
   // --- Update Methods ---
 
   void updateBirthDate(DateTime newDate) {
-    if (person.value == null) return;
-    // Since Person is immutable (or should be treated as such for Rx), we create a new instance
-    // But Person class doesn't have copyWith. I should check if I can modify it or create a new one manually.
-    // The Person class in the viewed file DOES NOT have copyWith.
-    // I will manually create a new Person with updated fields.
-
-    final p = person.value!;
-    person.value = Person(
-      id: p.id,
-      name: p.name,
-      birthDate: newDate,
-      phone: p.phone,
-      address: p.address,
-      email: p.email,
-      groupId: p.groupId,
-      anniversaries: p.anniversaries,
-      memos: p.memos,
-      preferences: p.preferences,
-    );
+    birthDate.value = newDate;
   }
 
   // Anniversaries
   void addAnniversary(String title, DateTime date, bool hasYear) {
-    if (person.value == null) return;
-    final newAnniv = Anniversary(
-      id: const Uuid().v4(),
-      personId: myId,
+    anniversaries.add(
+      Anniversary(
+        id: const Uuid().v4(),
+        personId: myId,
+        title: title,
+        date: date,
+        type: AnniversaryType.etc,
+        hasYear: hasYear,
+      ),
+    );
+  }
+
+  void addEmptyAnniversary() {
+    anniversaries.add(
+      Anniversary(
+        id: const Uuid().v4(),
+        personId: myId,
+        title: '',
+        date: DateTime.now(),
+        type: AnniversaryType.etc,
+        hasYear: true,
+      ),
+    );
+  }
+
+  void updateAnniversary(int index, String title, DateTime date, bool hasYear) {
+    if (index < 0 || index >= anniversaries.length) return;
+    final oldAnniv = anniversaries[index];
+    anniversaries[index] = Anniversary(
+      id: oldAnniv.id,
+      personId: oldAnniv.personId,
       title: title,
       date: date,
-      type: AnniversaryType.etc,
+      type: oldAnniv.type,
       hasYear: hasYear,
     );
-    final p = person.value!;
-    person.value = Person(
-      id: p.id,
-      name: p.name,
-      birthDate: p.birthDate,
-      phone: p.phone,
-      address: p.address,
-      email: p.email,
-      groupId: p.groupId,
-      anniversaries: [...p.anniversaries, newAnniv],
-      memos: p.memos,
-      preferences: p.preferences,
-    );
   }
 
-  void updateAnniversary(String id, String title, DateTime date, bool hasYear) {
-    if (person.value == null) return;
-    final p = person.value!;
-    final updatedList = p.anniversaries.map((a) {
-      if (a.id == id) {
-        return Anniversary(
-          id: a.id,
-          personId: a.personId,
-          title: title,
-          date: date,
-          type: a.type,
-          hasYear: hasYear,
-        );
-      }
-      return a;
-    }).toList();
-
-    person.value = Person(
-      id: p.id,
-      name: p.name,
-      birthDate: p.birthDate,
-      phone: p.phone,
-      address: p.address,
-      email: p.email,
-      groupId: p.groupId,
-      anniversaries: updatedList,
-      memos: p.memos,
-      preferences: p.preferences,
-    );
-  }
-
-  void deleteAnniversary(String id) {
-    if (person.value == null) return;
-    final p = person.value!;
-    final updatedList = p.anniversaries.where((a) => a.id != id).toList();
-    person.value = Person(
-      id: p.id,
-      name: p.name,
-      birthDate: p.birthDate,
-      phone: p.phone,
-      address: p.address,
-      email: p.email,
-      groupId: p.groupId,
-      anniversaries: updatedList,
-      memos: p.memos,
-      preferences: p.preferences,
-    );
+  void removeAnniversaryAt(int index) {
+    if (index >= 0 && index < anniversaries.length) {
+      anniversaries.removeAt(index);
+    }
   }
 
   // Memos
   void addMemo(String content) {
-    if (person.value == null) return;
-    final newMemo = Memo(
-      id: const Uuid().v4(),
-      personId: myId,
+    memos.add(
+      Memo(
+        id: const Uuid().v4(),
+        personId: myId,
+        content: content,
+        createdAt: DateTime.now(),
+      ),
+    );
+  }
+
+  void addEmptyMemo() {
+    memos.add(
+      Memo(
+        id: const Uuid().v4(),
+        personId: myId,
+        content: '',
+        createdAt: DateTime.now(),
+      ),
+    );
+  }
+
+  void updateMemo(int index, String content) {
+    if (index < 0 || index >= memos.length) return;
+    final oldMemo = memos[index];
+    memos[index] = Memo(
+      id: oldMemo.id,
+      personId: oldMemo.personId,
       content: content,
-      createdAt: DateTime.now(),
-    );
-    final p = person.value!;
-    person.value = Person(
-      id: p.id,
-      name: p.name,
-      birthDate: p.birthDate,
-      phone: p.phone,
-      address: p.address,
-      email: p.email,
-      groupId: p.groupId,
-      anniversaries: p.anniversaries,
-      memos: [...p.memos, newMemo],
-      preferences: p.preferences,
+      createdAt: oldMemo.createdAt,
     );
   }
 
-  void updateMemo(String id, String content) {
-    if (person.value == null) return;
-    final p = person.value!;
-    final updatedList = p.memos.map((m) {
-      if (m.id == id) {
-        return Memo(
-          id: m.id,
-          personId: m.personId,
-          content: content,
-          createdAt: m.createdAt,
-        );
-      }
-      return m;
-    }).toList();
-
-    person.value = Person(
-      id: p.id,
-      name: p.name,
-      birthDate: p.birthDate,
-      phone: p.phone,
-      address: p.address,
-      email: p.email,
-      groupId: p.groupId,
-      anniversaries: p.anniversaries,
-      memos: updatedList,
-      preferences: p.preferences,
-    );
-  }
-
-  void deleteMemo(String id) {
-    if (person.value == null) return;
-    final p = person.value!;
-    final updatedList = p.memos.where((m) => m.id != id).toList();
-    person.value = Person(
-      id: p.id,
-      name: p.name,
-      birthDate: p.birthDate,
-      phone: p.phone,
-      address: p.address,
-      email: p.email,
-      groupId: p.groupId,
-      anniversaries: p.anniversaries,
-      memos: updatedList,
-      preferences: p.preferences,
-    );
+  void removeMemoAt(int index) {
+    if (index >= 0 && index < memos.length) {
+      memos.removeAt(index);
+    }
   }
 
   // Preferences
-  void updatePreference(String category, bool isLike, List<String> contents) {
-    if (person.value == null) return;
-    final p = person.value!;
+  void toggleCategoryExpansion(String category) {
+    if (expandedCategories.contains(category)) {
+      expandedCategories.remove(category);
+    } else {
+      expandedCategories.add(category);
+    }
+  }
 
-    final currentPrefs = List<PreferenceCategory>.from(p.preferences);
+  void removePreferenceCategory(String category) {
+    preferences.removeWhere((p) => p.title == category);
+    expandedCategories.remove(category);
+  }
 
-    // Remove old ones matching category and type
-    currentPrefs.removeWhere(
-      (p) =>
-          p.title == category && (isLike ? p.like != null : p.dislike != null),
-    );
-
-    // Add new ones
-    for (var content in contents) {
-      currentPrefs.add(
+  void addPreferences(String category, bool isLike, List<String> contents) {
+    for (final content in contents) {
+      preferences.add(
         PreferenceCategory(
           id: const Uuid().v4(),
           personId: myId,
@@ -259,18 +215,37 @@ class MyRecordController extends GetxController {
         ),
       );
     }
+  }
 
-    person.value = Person(
-      id: p.id,
-      name: p.name,
-      birthDate: p.birthDate,
-      phone: p.phone,
-      address: p.address,
-      email: p.email,
-      groupId: p.groupId,
-      anniversaries: p.anniversaries,
-      memos: p.memos,
-      preferences: currentPrefs,
-    );
+  void updatePreferenceGroup(
+    String oldCategory,
+    bool oldIsLike,
+    String newCategory,
+    bool newIsLike,
+    List<String> newContents,
+  ) {
+    // 1. Remove old items matching category AND type
+    preferences.removeWhere((p) {
+      if (p.title != oldCategory) return false;
+      if (oldIsLike) {
+        return p.like != null;
+      } else {
+        return p.dislike != null;
+      }
+    });
+
+    // 2. Add new items
+    addPreferences(newCategory, newIsLike, newContents);
+
+    // 3. Update expanded categories if category name changed
+    if (oldCategory != newCategory) {
+      if (expandedCategories.contains(oldCategory)) {
+        bool hasRemaining = preferences.any((p) => p.title == oldCategory);
+        if (!hasRemaining) {
+          expandedCategories.remove(oldCategory);
+        }
+        expandedCategories.add(newCategory);
+      }
+    }
   }
 }
