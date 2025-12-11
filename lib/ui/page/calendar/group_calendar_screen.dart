@@ -234,7 +234,7 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                                 },
 
                                 daysOfWeekHeight: 20,
-                                rowHeight: 52,
+                                rowHeight: 60,
                                 daysOfWeekStyle: const DaysOfWeekStyle(
                                   decoration: BoxDecoration(
                                     color: Colors.white,

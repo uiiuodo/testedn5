@@ -156,7 +156,7 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                           },
                           headerVisible: false,
                           daysOfWeekHeight: 20,
-                          rowHeight: 52, // 1) Modified rowHeight
+                          rowHeight: 60, // 1) Modified rowHeight
                           calendarFormat: CalendarFormat.month,
                           availableGestures: AvailableGestures.horizontalSwipe,
                           daysOfWeekStyle: const DaysOfWeekStyle(
