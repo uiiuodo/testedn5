@@ -15,6 +15,18 @@ class GroupCalendarController extends GetxController {
   final Rx<DateTime?> selectedDay = Rx<DateTime?>(null);
   final RxBool isEditMode = false.obs;
 
+  bool get isOnTodayMonth {
+    final now = DateTime.now();
+    return focusedDay.value.year == now.year &&
+        focusedDay.value.month == now.month;
+  }
+
+  void goToToday() {
+    final now = DateTime.now();
+    focusedDay.value = now;
+    selectedDay.value = now;
+  }
+
   // Filter State
   final RxString selectedGroupId = 'all'.obs;
 
