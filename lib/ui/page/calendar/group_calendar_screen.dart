@@ -126,22 +126,6 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              // Pen Icon
-                              IconButton(
-                                icon: Obx(
-                                  () => Icon(
-                                    controller.isEditMode.value
-                                        ? Icons.edit
-                                        : Icons.edit_outlined,
-                                    color: controller.isEditMode.value
-                                        ? AppColors.primary
-                                        : AppColors.textSecondary,
-                                  ),
-                                ),
-                                onPressed: controller.toggleEditMode,
-                              ),
-                              const SizedBox(height: 4),
-
                               // Year (e.g., 2025)
                               Obx(
                                 () => Text(

@@ -29,10 +29,6 @@ class PersonCalendarScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined, color: Colors.black),
-            onPressed: () {},
-          ),
           const SizedBox(width: 16),
           Obx(
             () => Column(

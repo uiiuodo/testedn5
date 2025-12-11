@@ -101,30 +101,6 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Obx(
-                                      () => GestureDetector(
-                                        onTap: controller.toggleEditMode,
-                                        child: Container(
-                                          padding: const EdgeInsets.all(4),
-                                          decoration: BoxDecoration(
-                                            color: controller.isEditMode.value
-                                                ? Colors.black.withOpacity(0.1)
-                                                : Colors.transparent,
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Icon(
-                                            controller.isEditMode.value
-                                                ? Icons.edit
-                                                : Icons.edit_outlined,
-                                            size: 20,
-                                            color: controller.isEditMode.value
-                                                ? Colors.black
-                                                : const Color(0xFF979797),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Obx(
                                       () => Text(
                                         '${controller.focusedDay.value.year}',
                                         style: const TextStyle(
