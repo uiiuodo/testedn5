@@ -99,7 +99,7 @@ class _PeopleListScreenState extends State<PeopleListScreen> {
                             showGroupDropdown(
                               context,
                               position: position,
-                              groups: controller.usedGroups,
+                              groups: controller.groups,
                               onGroupSelected: (group) {
                                 controller.selectGroup(group.id);
                                 setState(() {
@@ -130,16 +130,17 @@ class _PeopleListScreenState extends State<PeopleListScreen> {
                                   context: context,
                                   isScrollControlled: true,
                                   backgroundColor: Colors.transparent,
-                                  builder: (context) =>
-                                      GroupManagementBottomSheet(
-                                        groups: controller.groups,
-                                        onRename: (id, newName) {
-                                          controller.updateGroup(id, newName);
-                                        },
-                                        onDelete: (id) {
-                                          controller.deleteGroup(id);
-                                        },
-                                      ),
+                                  builder: (context) => Obx(
+                                    () => GroupManagementBottomSheet(
+                                      groups: controller.groups.toList(),
+                                      onRename: (id, newName) {
+                                        controller.updateGroup(id, newName);
+                                      },
+                                      onDelete: (id) {
+                                        controller.deleteGroup(id);
+                                      },
+                                    ),
+                                  ),
                                 );
                               },
                             ).then((_) {
