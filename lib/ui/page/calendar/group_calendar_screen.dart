@@ -65,54 +65,64 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Left: Back Button
-                          IconButton(
-                            icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                            onPressed: () {
-                              homeController.changeTab(0);
-                            },
-                          ),
-
-                          // Back to Today Button (conditionally visible)
-                          Obx(() {
-                            if (controller.isOnTodayMonth) {
-                              return const SizedBox.shrink();
-                            }
-                            return GestureDetector(
-                              onTap: controller.goToToday,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: const Color(0xFFE0E0E0),
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: const [
-                                    Icon(
-                                      Icons.arrow_back,
-                                      size: 12,
-                                      color: Color(0xFF565656),
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      '현재 날짜로 돌아가기',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Color(0xFF565656),
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
+                          // Left Column: Back Button + Back to Today Button
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  homeController.changeTab(0);
+                                },
+                                child: const Icon(
+                                  Icons.arrow_back_ios_new_rounded,
+                                  size:
+                                      20, // Adjusted size to match PersonCalendar visual if needed or keep standard
+                                  color: Colors.black, // Explicit color
                                 ),
                               ),
-                            );
-                          }),
+                              const SizedBox(height: 12),
+                              // Back to Today Button (conditionally visible)
+                              Obx(() {
+                                if (controller.isOnTodayMonth) {
+                                  return const SizedBox.shrink();
+                                }
+                                return GestureDetector(
+                                  onTap: controller.goToToday,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: const Color(0xFFE0E0E0),
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: const [
+                                        Icon(
+                                          Icons.arrow_back,
+                                          size: 12,
+                                          color: Color(0xFF565656),
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          '현재 날짜로 돌아가기',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: Color(0xFF565656),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }),
+                            ],
+                          ),
 
                           // Right: Pen Icon + Year + Month
                           Column(
