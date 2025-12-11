@@ -725,8 +725,26 @@ class PersonEditScreen extends StatelessWidget {
                         .map((p) => p.dislike!)
                         .toList();
 
-                    final likes = likesList.join(', ');
-                    final dislikes = dislikesList.join(', ');
+                    String formatList(List<String> items) {
+                      if (items.isEmpty) return '';
+                      final flattened = <String>[];
+                      for (var item in items) {
+                        // Split by newline and comma to handle legacy data
+                        var parts = item.split(RegExp(r'[\n,]'));
+                        for (var part in parts) {
+                          var clean = part.trim();
+                          if (clean.startsWith('•'))
+                            clean = clean.substring(1).trim();
+                          if (clean.startsWith('·'))
+                            clean = clean.substring(1).trim();
+                          if (clean.isNotEmpty) flattened.add(clean);
+                        }
+                      }
+                      return flattened.map((e) => '• $e').join('\n');
+                    }
+
+                    final likes = formatList(likesList);
+                    final dislikes = formatList(dislikesList);
 
                     final isExpanded = controller.expandedCategories.contains(
                       category,
