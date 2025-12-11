@@ -122,23 +122,13 @@ class PersonEditScreen extends StatelessWidget {
                         offset.dy + renderBox.size.height + 200,
                       );
 
+                      // Use all groups from HomeController
                       final homeController = Get.find<HomeController>();
-                      final usedIds = homeController.people
-                          .map((p) => p.groupId)
-                          .toSet();
-                      if (controller.selectedGroupId.value.isNotEmpty) {
-                        usedIds.add(controller.selectedGroupId.value);
-                      }
-
-                      final displayGroups = controller.groups
-                          .where((g) => usedIds.contains(g.id))
-                          .toList();
-                      displayGroups.sort((a, b) => a.name.compareTo(b.name));
 
                       showGroupDropdown(
                         context,
                         position: position,
-                        groups: displayGroups,
+                        groups: homeController.groups,
                         onGroupSelected: (group) {
                           controller.selectedGroupId.value = group.id;
                         },
@@ -160,14 +150,16 @@ class PersonEditScreen extends StatelessWidget {
                             context: context,
                             isScrollControlled: true,
                             backgroundColor: Colors.transparent,
-                            builder: (context) => GroupManagementBottomSheet(
-                              groups: controller.groups,
-                              onRename: (id, newName) {
-                                controller.updateGroup(id, newName);
-                              },
-                              onDelete: (id) {
-                                controller.deleteGroup(id);
-                              },
+                            builder: (context) => Obx(
+                              () => GroupManagementBottomSheet(
+                                groups: homeController.groups.toList(),
+                                onRename: (id, newName) {
+                                  controller.updateGroup(id, newName);
+                                },
+                                onDelete: (id) {
+                                  controller.deleteGroup(id);
+                                },
+                              ),
                             ),
                           );
                         },
