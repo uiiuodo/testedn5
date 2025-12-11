@@ -273,7 +273,13 @@ class PersonEditController extends GetxController {
   }
 
   void removeAnniversary(int index) {
-    anniversaries.removeAt(index);
+    removeAnniversaryAt(index);
+  }
+
+  void removeAnniversaryAt(int index) {
+    if (index >= 0 && index < anniversaries.length) {
+      anniversaries.removeAt(index);
+    }
   }
 
   void updateAnniversary(int index, String title, DateTime date, bool hasYear) {
@@ -313,7 +319,13 @@ class PersonEditController extends GetxController {
   }
 
   void removeMemo(int index) {
-    memos.removeAt(index);
+    removeMemoAt(index);
+  }
+
+  void removeMemoAt(int index) {
+    if (index >= 0 && index < memos.length) {
+      memos.removeAt(index);
+    }
   }
 
   void updateMemo(int index, String content) {

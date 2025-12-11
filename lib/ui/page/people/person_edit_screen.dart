@@ -428,12 +428,12 @@ class PersonEditScreen extends StatelessWidget {
 
               Obx(
                 () => Column(
-                  children: controller.anniversaries.asMap().entries.map((
-                    entry,
+                  children: List.generate(controller.anniversaries.length, (
+                    index,
                   ) {
-                    final index = entry.key;
-                    final anniv = entry.value;
+                    final anniv = controller.anniversaries[index];
                     return Container(
+                      key: Key(anniv.id),
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -520,7 +520,7 @@ class PersonEditScreen extends StatelessWidget {
                               const Spacer(),
                               GestureDetector(
                                 onTap: () {
-                                  controller.removeAnniversary(index);
+                                  controller.removeAnniversaryAt(index);
                                 },
                                 child: const Icon(
                                   Icons.close,
@@ -591,7 +591,7 @@ class PersonEditScreen extends StatelessWidget {
                         ],
                       ),
                     );
-                  }).toList(),
+                  }),
                 ),
               ),
               const SizedBox(height: 20),
@@ -630,10 +630,10 @@ class PersonEditScreen extends StatelessWidget {
               // Existing Memos
               Obx(
                 () => Column(
-                  children: controller.memos.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final memo = entry.value;
+                  children: List.generate(controller.memos.length, (index) {
+                    final memo = controller.memos[index];
                     return Container(
+                      key: Key(memo.id),
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -671,7 +671,7 @@ class PersonEditScreen extends StatelessWidget {
                           ),
                           GestureDetector(
                             onTap: () {
-                              controller.removeMemo(index);
+                              controller.removeMemoAt(index);
                             },
                             child: const Icon(
                               Icons.close,
@@ -682,7 +682,7 @@ class PersonEditScreen extends StatelessWidget {
                         ],
                       ),
                     );
-                  }).toList(),
+                  }),
                 ),
               ),
               const SizedBox(height: 30),
