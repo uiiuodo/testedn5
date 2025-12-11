@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../../../../data/model/schedule.dart';
 import '../../../../data/repository/schedule_repository.dart';
+import '../../home/home_controller.dart';
 
 class PersonCalendarController extends GetxController {
   final String personId;
@@ -73,8 +74,122 @@ class PersonCalendarController extends GetxController {
     goToToday();
   }
 
-  List<Schedule> getEventsForDay(DateTime day) {
-    return schedules.where((s) => isSameDay(s.startDateTime, day)).toList();
+  List<CalendarDayItem> getDayItems(DateTime day) {
+    final List<CalendarDayItem> items = [];
+
+    // 1. Schedules
+    final eventsForDay = schedules.where((s) {
+      if (s.allDay || !isSameDay(s.startDateTime, s.endDateTime)) {
+        final start = DateTime(
+          s.startDateTime.year,
+          s.startDateTime.month,
+          s.startDateTime.day,
+        );
+        final end = DateTime(
+          s.endDateTime.year,
+          s.endDateTime.month,
+          s.endDateTime.day,
+        );
+        final check = DateTime(day.year, day.month, day.day);
+        return (check.isAtSameMomentAs(start) || check.isAfter(start)) &&
+            (check.isAtSameMomentAs(end) || check.isBefore(end));
+      }
+      return isSameDay(s.startDateTime, day);
+    }).toList();
+
+    for (var s in eventsForDay) {
+      // For PersonCalendar, we might want to show the person's group color or the schedule's group color.
+      // Since it's a person calendar, usually we show that person's group color.
+      // But if the schedule has a specific group, we use that.
+
+      // However, we don't have easy access to HomeController here to get groups list without putting it.
+      // Let's try to get it from HomeController if available.
+      int? colorValue;
+      try {
+        if (Get.isRegistered<HomeController>()) {
+          final homeController = Get.find<HomeController>();
+          if (s.groupId != null) {
+            final group = homeController.groups.firstWhereOrNull(
+              (g) => g.id == s.groupId,
+            );
+            colorValue = group?.colorValue;
+          } else {
+            // Fallback to person's group
+            // We need to fetch person to know their group.
+            // We can fetch person from PersonRepository or HomeController.
+            final person = homeController.people.firstWhereOrNull(
+              (p) => p.id == personId,
+            );
+            if (person != null && person.groupId != null) {
+              final group = homeController.groups.firstWhereOrNull(
+                (g) => g.id == person.groupId,
+              );
+              colorValue = group?.colorValue;
+            }
+          }
+        }
+      } catch (e) {
+        // Ignore
+      }
+
+      items.add(
+        CalendarDayItem(
+          title: s.title,
+          type: s.type == ScheduleType.anniversary
+              ? CalendarItemType.anniversary
+              : CalendarItemType.schedule,
+          groupColor: colorValue,
+        ),
+      );
+    }
+
+    // 2. Birthdays
+    // Check if it's this person's birthday
+    try {
+      if (Get.isRegistered<HomeController>()) {
+        final homeController = Get.find<HomeController>();
+        final person = homeController.people.firstWhereOrNull(
+          (p) => p.id == personId,
+        );
+        if (person != null && person.birthDate != null) {
+          final birthDate = person.birthDate!;
+          if (birthDate.month == day.month && birthDate.day == day.day) {
+            // Check for duplicate
+            final hasSchedule = schedules.any(
+              (s) =>
+                  s.type == ScheduleType.anniversary &&
+                  isSameDay(s.startDateTime, day),
+            );
+
+            if (!hasSchedule) {
+              int? colorValue;
+              if (person.groupId != null) {
+                final group = homeController.groups.firstWhereOrNull(
+                  (g) => g.id == person.groupId,
+                );
+                colorValue = group?.colorValue;
+              }
+              items.add(
+                CalendarDayItem(
+                  title: '🎂 ${person.name}',
+                  type: CalendarItemType.birthday,
+                  groupColor: colorValue,
+                ),
+              );
+            }
+          }
+        }
+      }
+    } catch (e) {
+      // Ignore
+    }
+
+    // Sort
+    items.sort((a, b) {
+      return a.type.index.compareTo(b.type.index);
+    });
+
+    return items;
   }
 
   bool isSameDay(DateTime? a, DateTime? b) {
@@ -83,4 +198,14 @@ class PersonCalendarController extends GetxController {
     }
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
+}
+
+enum CalendarItemType { birthday, anniversary, schedule }
+
+class CalendarDayItem {
+  final String title;
+  final int? groupColor;
+  final CalendarItemType type;
+
+  CalendarDayItem({required this.title, required this.type, this.groupColor});
 }

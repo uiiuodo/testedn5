@@ -232,7 +232,7 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                                 onPageChanged: (focusedDay) {
                                   controller.focusedDay.value = focusedDay;
                                 },
-                                eventLoader: controller.getEventsForDay,
+
                                 daysOfWeekHeight: 20,
                                 rowHeight: 70,
                                 daysOfWeekStyle: const DaysOfWeekStyle(
@@ -288,7 +288,7 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                                     );
                                   },
                                   markerBuilder: (context, day, events) {
-                                    return const SizedBox.shrink(); // Hide default markers
+                                    return const SizedBox.shrink();
                                   },
                                 ),
                               ),
@@ -759,56 +759,98 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
     bool isToday = false,
     bool isOutside = false,
   }) {
-    final events = controller.getEventsForDay(day);
-    final hasEvents = events.isNotEmpty;
-    final eventTitle = hasEvents ? events.first : '';
+    final items = controller.getDayItems(day);
+
+    // Day number color
+    Color dayColor = AppColors.textPrimary;
+    if (day.weekday == DateTime.sunday) {
+      dayColor = const Color(0xFFFF0000);
+    } else if (day.weekday == DateTime.saturday) {
+      dayColor = const Color(0xFF0084FF);
+    }
+    if (isOutside) {
+      dayColor = dayColor.withOpacity(0.3);
+    }
 
     return Container(
       margin: const EdgeInsets.all(2),
-      decoration: hasEvents
-          ? BoxDecoration(
-              color: const Color(0xFFF5F5F5),
-              borderRadius: BorderRadius.circular(8),
-            )
-          : null,
+      decoration: BoxDecoration(
+        color: isToday ? const Color(0xFFF2F2F2) : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        border: isSelected
+            ? Border.all(color: AppColors.primary, width: 1)
+            : null,
+      ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 4),
-          if (hasEvents)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2.0),
-              child: Text(
-                eventTitle,
-                style: const TextStyle(
-                  fontSize: 8,
-                  color: Color(0xFF4A4A4A),
-                  fontWeight: FontWeight.w400,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                maxLines: 1,
+          // Day Number
+          Padding(
+            padding: const EdgeInsets.only(top: 4, left: 6),
+            child: Text(
+              '${day.day}',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w300,
+                color: dayColor,
               ),
-            )
-          else
-            const SizedBox(height: 10), // Spacer to align day number
-          const Spacer(),
-          Text(
-            '${day.day}',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w300,
-              color: isOutside
-                  ? const Color(0xFFD9D9D9) // Gray for outside days
-                  : (isToday
-                        ? Colors.blue
-                        : (day.weekday == DateTime.sunday
-                              ? Colors.red
-                              : (day.weekday == DateTime.saturday
-                                    ? Colors.blue
-                                    : Colors.black))),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
+
+          // Events List
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ...items.take(3).map((item) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: Row(
+                        children: [
+                          // Color Bar
+                          Container(
+                            width: 2,
+                            height: 10,
+                            color: item.groupColor != null
+                                ? Color(item.groupColor!)
+                                : const Color(0xFFD9D9D9),
+                          ),
+                          const SizedBox(width: 4),
+                          // Title
+                          Expanded(
+                            child: Text(
+                              item.title,
+                              style: const TextStyle(
+                                fontSize: 9,
+                                color: Color(0xFF4A4A4A),
+                                fontWeight: FontWeight.w400,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              maxLines: 1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                  if (items.length > 3)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 6),
+                      child: Text(
+                        '+${items.length - 3}',
+                        style: const TextStyle(
+                          fontSize: 8,
+                          color: Color(0xFF9D9D9D),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

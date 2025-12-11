@@ -154,7 +154,7 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                       const SizedBox(height: 30),
                       // Calendar
                       Obx(
-                        () => TableCalendar<Schedule>(
+                        () => TableCalendar(
                           firstDay: DateTime(2020, 1, 1),
                           lastDay: DateTime(2030, 12, 31),
                           focusedDay: controller.focusedDay.value,
@@ -164,10 +164,9 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                             controller.selectedDay.value = selectedDay;
                             controller.focusedDay.value = focusedDay;
                           },
-                          eventLoader: controller.getEventsForDay,
                           headerVisible: false,
                           daysOfWeekHeight: 20,
-                          rowHeight: 60,
+                          rowHeight: 70,
                           calendarFormat: CalendarFormat.month,
                           availableGestures: AvailableGestures.horizontalSwipe,
                           daysOfWeekStyle: const DaysOfWeekStyle(
@@ -202,30 +201,26 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                               return null;
                             },
                             defaultBuilder: (context, day, focusedDay) {
-                              return _buildDayCell(
-                                context,
-                                day,
-                                controller.getEventsForDay(day),
-                              );
+                              return _buildDayCell(controller, day, false);
                             },
                             selectedBuilder: (context, day, focusedDay) {
-                              return _buildDayCell(
-                                context,
-                                day,
-                                controller.getEventsForDay(day),
-                                isSelected: true,
-                              );
+                              return _buildDayCell(controller, day, true);
                             },
                             todayBuilder: (context, day, focusedDay) {
                               return _buildDayCell(
-                                context,
+                                controller,
                                 day,
-                                controller.getEventsForDay(day),
+                                false,
                                 isToday: true,
                               );
                             },
                             outsideBuilder: (context, day, focusedDay) {
-                              return const SizedBox.shrink();
+                              return _buildDayCell(
+                                controller,
+                                day,
+                                false,
+                                isOutside: true,
+                              );
                             },
                             markerBuilder: (context, day, events) {
                               return const SizedBox.shrink();
@@ -524,168 +519,106 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
   }
 
   Widget _buildDayCell(
-    BuildContext context,
+    PersonCalendarController controller,
     DateTime day,
-    List<Schedule> events, {
-    bool isSelected = false,
+    bool isSelected, {
     bool isToday = false,
+    bool isOutside = false,
   }) {
-    // Check for multi-day events
-    bool isMultiDayStart = false;
-    bool isMultiDayMiddle = false;
-    bool isMultiDayEnd = false;
-    Schedule? multiDayEvent;
-    bool hasEvents = events.isNotEmpty;
+    final items = controller.getDayItems(day);
 
-    for (var event in events) {
-      if (event.title == '출장') {
-        multiDayEvent = event;
-        if (isSameDay(event.startDateTime, day))
-          isMultiDayStart = true;
-        else if (isSameDay(event.endDateTime, day))
-          isMultiDayEnd = true;
-        else
-          isMultiDayMiddle = true;
-      }
+    // Day number color
+    Color dayColor = const Color(0xFF4A4A4A);
+    if (day.weekday == DateTime.sunday) {
+      dayColor = const Color(0xFFFF0000);
+    } else if (day.weekday == DateTime.saturday) {
+      dayColor = const Color(0xFF0084FF);
+    }
+    if (isOutside) {
+      dayColor = dayColor.withOpacity(0.3);
     }
 
-    return Stack(
-      alignment: Alignment.topCenter,
-      children: [
-        // Gray background box for days with events
-        if (hasEvents)
-          Positioned(
-            top: 0,
-            child: Container(
-              width: 36,
-              height: 48,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F5).withOpacity(0.64),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
-
-        // Content
-        Container(
-          margin: const EdgeInsets.all(0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              const SizedBox(height: 4),
-              Text(
-                '${day.day}',
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontSize: 12,
-                  fontFamily: 'Noto Sans',
-                  fontWeight: FontWeight.w300,
-                ),
-              ),
-              const SizedBox(height: 4),
-              // Render events
-              ...events
-                  .where((e) => e.title != '출장')
-                  .take(3)
-                  .map((event) => _buildEventMarker(event)),
-
-              // Render multi-day event bar if exists
-              if (multiDayEvent != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2.0),
-                  child: _buildMultiDayBar(
-                    multiDayEvent,
-                    isMultiDayStart,
-                    isMultiDayMiddle,
-                    isMultiDayEnd,
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEventMarker(Schedule event) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        vertical: 1.0,
-        horizontal: 2.0,
-      ), // Adjusted padding to fit inside 36px width better
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center, // Center content
+    return Container(
+      margin: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: isToday ? const Color(0xFFF2F2F2) : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        border: isSelected
+            ? Border.all(color: const Color(0xFF4A4A4A), width: 1)
+            : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 1,
-            height: 5,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFD8FD),
-              borderRadius: BorderRadius.circular(0.5),
+          // Day Number
+          Padding(
+            padding: const EdgeInsets.only(top: 4, left: 6),
+            child: Text(
+              '${day.day}',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w300,
+                color: dayColor,
+              ),
             ),
           ),
-          const SizedBox(width: 2),
-          ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: 28,
-            ), // Ensure text doesn't overflow the 36px box too much
-            child: Text(
-              event.title,
-              style: const TextStyle(
-                color: Color(0xFF4A4A4A),
-                fontSize: 6,
-                fontFamily: 'Noto Sans',
-                fontWeight: FontWeight.w300,
-                overflow: TextOverflow.ellipsis,
+          const SizedBox(height: 2),
+
+          // Events List
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ...items.take(3).map((item) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: Row(
+                        children: [
+                          // Color Bar
+                          Container(
+                            width: 2,
+                            height: 10,
+                            color: item.groupColor != null
+                                ? Color(item.groupColor!)
+                                : const Color(0xFFD9D9D9),
+                          ),
+                          const SizedBox(width: 4),
+                          // Title
+                          Expanded(
+                            child: Text(
+                              item.title,
+                              style: const TextStyle(
+                                fontSize: 9,
+                                color: Color(0xFF4A4A4A),
+                                fontWeight: FontWeight.w400,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              maxLines: 1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                  if (items.length > 3)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 6),
+                      child: Text(
+                        '+${items.length - 3}',
+                        style: const TextStyle(
+                          fontSize: 8,
+                          color: Color(0xFF9D9D9D),
+                        ),
+                      ),
+                    ),
+                ],
               ),
-              maxLines: 1,
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildMultiDayBar(
-    Schedule event,
-    bool isStart,
-    bool isMiddle,
-    bool isEnd,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          height: 5,
-          width: double.infinity,
-          margin: EdgeInsets.only(
-            left: isStart ? 2.0 : 0.0,
-            right: isEnd ? 2.0 : 0.0,
-          ),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFD8FD),
-            borderRadius: BorderRadius.horizontal(
-              left: isStart ? const Radius.circular(2.5) : Radius.zero,
-              right: isEnd ? const Radius.circular(2.5) : Radius.zero,
-            ),
-          ),
-        ),
-        if (isStart)
-          Padding(
-            padding: const EdgeInsets.only(left: 2.0, top: 1.0),
-            child: Text(
-              event.title,
-              style: const TextStyle(
-                color: Color(0xFF4A4A4A),
-                fontSize: 6,
-                fontFamily: 'Noto Sans',
-                fontWeight: FontWeight.w300,
-                overflow: TextOverflow.ellipsis,
-              ),
-              maxLines: 1,
-            ),
-          ),
-      ],
     );
   }
 }

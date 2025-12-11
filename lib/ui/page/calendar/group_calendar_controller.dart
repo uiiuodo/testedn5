@@ -39,12 +39,15 @@ class GroupCalendarController extends GetxController {
     people.value = _personRepository.getPeople();
   }
 
+  bool isSameDay(DateTime? a, DateTime? b) {
+    if (a == null || b == null) {
+      return false;
+    }
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
   // Filter Logic
   List<Schedule> get filteredCalendarSchedules {
-    // For calendar, we show all schedules (planned or not) that match the group
-    // But typically "Calendar Schedules" might imply confirmed ones if we wanted to separate them visually.
-    // However, the requirement is to show everything on the calendar.
-    // So we filter by group only.
     if (selectedGroupId.value == 'all') {
       return schedules;
     }
@@ -52,8 +55,6 @@ class GroupCalendarController extends GetxController {
   }
 
   List<Schedule> get filteredPlannedSchedules {
-    // For the list, we specifically want "Planned" schedules (isPlanned == true)
-    // filtered by group.
     final planned = schedules.where((s) => s.isPlanned).toList();
 
     if (selectedGroupId.value == 'all') {
@@ -71,12 +72,11 @@ class GroupCalendarController extends GetxController {
     isEditMode.value = !isEditMode.value;
   }
 
-  List<String> getEventsForDay(DateTime day) {
-    final List<String> events = [];
+  List<CalendarDayItem> getDayItems(DateTime day) {
+    final List<CalendarDayItem> items = [];
 
-    // 1. Add Schedule Events
+    // 1. Schedules
     final eventsForDay = filteredCalendarSchedules.where((s) {
-      // Check for multi-day overlap
       if (s.allDay || !isSameDay(s.startDateTime, s.endDateTime)) {
         final start = DateTime(
           s.startDateTime.year,
@@ -95,9 +95,39 @@ class GroupCalendarController extends GetxController {
       return isSameDay(s.startDateTime, day);
     }).toList();
 
-    events.addAll(eventsForDay.map((s) => s.title));
+    for (var s in eventsForDay) {
+      int? colorValue;
+      // Find group color if available
+      if (s.groupId != null) {
+        final group = Get.find<HomeController>().groups.firstWhereOrNull(
+          (g) => g.id == s.groupId,
+        );
+        colorValue = group?.colorValue;
+      } else if (s.personIds.isNotEmpty) {
+        // Fallback to first person's group
+        final person = people.firstWhereOrNull(
+          (p) => p.id == s.personIds.first,
+        );
+        if (person != null && person.groupId != null) {
+          final group = Get.find<HomeController>().groups.firstWhereOrNull(
+            (g) => g.id == person.groupId,
+          );
+          colorValue = group?.colorValue;
+        }
+      }
 
-    // 2. Add Birthday Events
+      items.add(
+        CalendarDayItem(
+          title: s.title,
+          type: s.type == ScheduleType.anniversary
+              ? CalendarItemType.anniversary
+              : CalendarItemType.schedule,
+          groupColor: colorValue,
+        ),
+      );
+    }
+
+    // 2. Birthdays
     final filteredPeople = selectedGroupId.value == 'all'
         ? people
         : people.where((p) => p.groupId == selectedGroupId.value).toList();
@@ -106,7 +136,7 @@ class GroupCalendarController extends GetxController {
       if (person.birthDate != null) {
         final birthDate = person.birthDate!;
         if (birthDate.month == day.month && birthDate.day == day.day) {
-          // Check if explicit schedule exists to avoid duplicate
+          // Check for duplicate explicit schedule
           final hasSchedule = filteredCalendarSchedules.any(
             (s) =>
                 s.personIds.contains(person.id) &&
@@ -115,20 +145,31 @@ class GroupCalendarController extends GetxController {
           );
 
           if (!hasSchedule) {
-            events.add('🎂 ${person.name}');
+            int? colorValue;
+            if (person.groupId != null) {
+              final group = Get.find<HomeController>().groups.firstWhereOrNull(
+                (g) => g.id == person.groupId,
+              );
+              colorValue = group?.colorValue;
+            }
+            items.add(
+              CalendarDayItem(
+                title: '🎂 ${person.name}',
+                type: CalendarItemType.birthday,
+                groupColor: colorValue,
+              ),
+            );
           }
         }
       }
     }
 
-    return events;
-  }
+    // Sort: Birthday > Anniversary > Schedule
+    items.sort((a, b) {
+      return a.type.index.compareTo(b.type.index);
+    });
 
-  bool isSameDay(DateTime? a, DateTime? b) {
-    if (a == null || b == null) {
-      return false;
-    }
-    return a.year == b.year && a.month == b.month && a.day == b.day;
+    return items;
   }
 
   Future<void> deletePlannedSchedule(String id) async {
@@ -165,10 +206,14 @@ class GroupCalendarController extends GetxController {
       print('Error adding group: $e');
     }
   }
+}
 
-  // Note: fetchGroups was not explicitly defined in the previous view, but groups are used.
-  // Wait, GroupCalendarController uses _groupRepository but doesn't seem to expose `groups` list directly?
-  // Let me check the file content again.
-  // Line 13: final RxList<Group> groups = <Group>[].obs; is NOT present in the snippet I saw?
-  // Let me re-read the file content I viewed.
+enum CalendarItemType { birthday, anniversary, schedule }
+
+class CalendarDayItem {
+  final String title;
+  final int? groupColor;
+  final CalendarItemType type;
+
+  CalendarDayItem({required this.title, required this.type, this.groupColor});
 }
