@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../data/model/schedule.dart';
 import '../../../../data/repository/schedule_repository.dart';
@@ -8,6 +9,8 @@ import '../schedule_edit_screen.dart';
 class PersonCalendarController extends GetxController {
   final String personId;
   final ScheduleRepository _scheduleRepository = Get.find<ScheduleRepository>();
+  final DraggableScrollableController sheetController =
+      DraggableScrollableController();
 
   PersonCalendarController({required this.personId});
 
@@ -116,6 +119,25 @@ class PersonCalendarController extends GetxController {
         );
 
         if (person != null) {
+          // Birthday Logic
+          if (person.birthDate != null &&
+              person.birthDate!.month == day.month &&
+              person.birthDate!.day == day.day) {
+            combined.add(
+              Schedule(
+                id: 'birthday_${person.id}_${day.year}',
+                title: '🎂 ${person.name}',
+                startDateTime: day,
+                endDateTime: day,
+                allDay: true,
+                type: ScheduleType.anniversary,
+                personIds: [person.id],
+                groupId: person.groupId,
+                isAnniversary: true,
+              ),
+            );
+          }
+
           combined.addAll(
             AnniversaryService.getAnniversariesForDay(
               [person],
@@ -128,6 +150,9 @@ class PersonCalendarController extends GetxController {
     } catch (e) {
       // Ignore
     }
+
+    // Sort: Anniversary (0) > Care (1) > Etc (2)
+    combined.sort((a, b) => a.type.index.compareTo(b.type.index));
 
     return combined;
   }
