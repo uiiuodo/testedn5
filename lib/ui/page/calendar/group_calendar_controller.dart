@@ -72,8 +72,8 @@ class GroupCalendarController extends GetxController {
     isEditMode.value = !isEditMode.value;
   }
 
-  List<CalendarDayItem> getDayItems(DateTime day) {
-    final List<CalendarDayItem> items = [];
+  List<Schedule> getDayItems(DateTime day) {
+    List<Schedule> items = [];
 
     // 1. Schedules
     final eventsForDay = filteredCalendarSchedules.where((s) {
@@ -95,37 +95,7 @@ class GroupCalendarController extends GetxController {
       return isSameDay(s.startDateTime, day);
     }).toList();
 
-    for (var s in eventsForDay) {
-      int? colorValue;
-      // Find group color if available
-      if (s.groupId != null) {
-        final group = Get.find<HomeController>().groups.firstWhereOrNull(
-          (g) => g.id == s.groupId,
-        );
-        colorValue = group?.colorValue;
-      } else if (s.personIds.isNotEmpty) {
-        // Fallback to first person's group
-        final person = people.firstWhereOrNull(
-          (p) => p.id == s.personIds.first,
-        );
-        if (person != null && person.groupId != null) {
-          final group = Get.find<HomeController>().groups.firstWhereOrNull(
-            (g) => g.id == person.groupId,
-          );
-          colorValue = group?.colorValue;
-        }
-      }
-
-      items.add(
-        CalendarDayItem(
-          title: s.title,
-          type: s.type == ScheduleType.anniversary
-              ? CalendarItemType.anniversary
-              : CalendarItemType.schedule,
-          groupColor: colorValue,
-        ),
-      );
-    }
+    items.addAll(eventsForDay);
 
     // 2. Birthdays
     final filteredPeople = selectedGroupId.value == 'all'
@@ -145,18 +115,19 @@ class GroupCalendarController extends GetxController {
           );
 
           if (!hasSchedule) {
-            int? colorValue;
-            if (person.groupId != null) {
-              final group = Get.find<HomeController>().groups.firstWhereOrNull(
-                (g) => g.id == person.groupId,
-              );
-              colorValue = group?.colorValue;
-            }
+            // Create a synthetic Schedule for birthday
             items.add(
-              CalendarDayItem(
+              Schedule(
+                id: 'birthday_${person.id}_${day.millisecondsSinceEpoch}',
                 title: '🎂 ${person.name}',
-                type: CalendarItemType.birthday,
-                groupColor: colorValue,
+                startDateTime: day,
+                endDateTime: day,
+                allDay: true,
+                type: ScheduleType.anniversary,
+                personIds: [person.id],
+                groupId: person.groupId,
+                isAnniversary: true,
+                // Other required fields
               ),
             );
           }
@@ -164,7 +135,8 @@ class GroupCalendarController extends GetxController {
       }
     }
 
-    // Sort: Birthday > Anniversary > Schedule
+    // Sort: Anniversary (0) > Care (1) > Etc (2)
+    // Birthdays are Anniversary type, so they come first.
     items.sort((a, b) {
       return a.type.index.compareTo(b.type.index);
     });
@@ -206,14 +178,4 @@ class GroupCalendarController extends GetxController {
       print('Error adding group: $e');
     }
   }
-}
-
-enum CalendarItemType { birthday, anniversary, schedule }
-
-class CalendarDayItem {
-  final String title;
-  final int? groupColor;
-  final CalendarItemType type;
-
-  CalendarDayItem({required this.title, required this.type, this.groupColor});
 }

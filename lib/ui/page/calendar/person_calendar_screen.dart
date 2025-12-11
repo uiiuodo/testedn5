@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:get/get.dart';
+import '../home/home_controller.dart';
 import 'person_calendar/person_calendar_controller.dart';
 import '../../../../data/model/schedule.dart';
 
@@ -82,10 +83,16 @@ class PersonCalendarScreen extends StatelessWidget {
               },
               eventLoader: (day) => controller.getEventsForDay(day),
               daysOfWeekHeight: 30,
+              rowHeight: 60,
               daysOfWeekStyle: DaysOfWeekStyle(
                 dowTextFormatter: (date, locale) =>
                     DateFormat.E(locale).format(date),
                 decoration: const BoxDecoration(color: Colors.white),
+              ),
+              calendarStyle: const CalendarStyle(
+                selectedDecoration: BoxDecoration(color: Colors.transparent),
+                todayDecoration: BoxDecoration(color: Colors.transparent),
+                selectedTextStyle: TextStyle(color: Colors.black, fontSize: 14),
               ),
               calendarBuilders: CalendarBuilders(
                 dowBuilder: (context, day) {
@@ -107,27 +114,75 @@ class PersonCalendarScreen extends StatelessWidget {
                   );
                 },
                 defaultBuilder: (context, day, focusedDay) {
-                  return _buildDayCell(context, day, controller, false);
+                  final events = controller.getEventsForDay(day);
+                  final firstEvent = events.isNotEmpty ? events.first : null;
+
+                  Color dayColor = Colors.black;
+                  if (day.weekday == DateTime.sunday) {
+                    dayColor = const Color(0xFFFF0000);
+                  } else if (day.weekday == DateTime.saturday) {
+                    dayColor = const Color(0xFF0084FF);
+                  }
+
+                  return _buildDayCell(
+                    day: day,
+                    event: firstEvent,
+                    dayTextStyle: TextStyle(
+                      color: dayColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w300,
+                    ),
+                  );
                 },
                 selectedBuilder: (context, day, focusedDay) {
-                  return _buildDayCell(context, day, controller, true);
+                  final events = controller.getEventsForDay(day);
+                  final firstEvent = events.isNotEmpty ? events.first : null;
+                  return _buildDayCell(
+                    day: day,
+                    event: firstEvent,
+                    dayTextStyle: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  );
                 },
                 todayBuilder: (context, day, focusedDay) {
+                  final events = controller.getEventsForDay(day);
+                  final firstEvent = events.isNotEmpty ? events.first : null;
                   return _buildDayCell(
-                    context,
-                    day,
-                    controller,
-                    false,
-                    isToday: true,
+                    day: day,
+                    event: firstEvent,
+                    dayTextStyle: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  );
+                },
+                outsideBuilder: (context, day, focusedDay) {
+                  final events = controller.getEventsForDay(day);
+                  final firstEvent = events.isNotEmpty ? events.first : null;
+
+                  Color dayColor = Colors.black.withOpacity(0.3);
+                  if (day.weekday == DateTime.sunday) {
+                    dayColor = const Color(0xFFFF0000).withOpacity(0.3);
+                  } else if (day.weekday == DateTime.saturday) {
+                    dayColor = const Color(0xFF0084FF).withOpacity(0.3);
+                  }
+
+                  return _buildDayCell(
+                    day: day,
+                    event: firstEvent,
+                    dayTextStyle: TextStyle(
+                      color: dayColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w300,
+                    ),
                   );
                 },
                 markerBuilder: (context, day, events) {
-                  // We handle markers inside _buildDayCell for custom textual display
-                  // or return null here if _buildDayCell covers it.
-                  // The requirement says "text under the date number".
-                  // TableCalendar's default/selected builder fills the cell.
-                  // So we can do everything in _buildDayCell.
-                  return null;
+                  return const SizedBox.shrink();
                 },
               ),
             ),
@@ -292,109 +347,64 @@ class PersonCalendarScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDayCell(
-    BuildContext context,
-    DateTime day,
-    PersonCalendarController controller,
-    bool isSelected, {
-    bool isToday = false,
-  }) {
-    // Determine overlapping content
-    // We need to get events synchronously.
-    // Since we are in Obx in the parent (TableCalendar), but wait, TableCalendar is reactive?
-    // TableCalendar rebuilds when `events` changes?
-    // We wrapped TableCalendar in Obx. Correct.
-
-    final events = controller.getEventsForDay(day);
-
-    return Container(
-      margin: const EdgeInsets.all(1),
-      alignment: Alignment.topCenter,
-      decoration: isSelected
-          ? BoxDecoration(
-              color: const Color(0xFFF5F5F5),
-              borderRadius: BorderRadius.circular(8),
-            )
-          : null,
-      child: Column(
-        children: [
-          // Date Number with Today emphasis
-          Container(
-            margin: const EdgeInsets.only(top: 4, bottom: 2),
-            padding: const EdgeInsets.all(4),
-            decoration: isToday
-                ? BoxDecoration(
-                    color: const Color(
-                      0xFFEEEEEE,
-                    ), // Light gray background for today
-                    borderRadius: BorderRadius.circular(4),
-                  )
-                : null,
-            child: Text(
-              '${day.day}',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isToday ? FontWeight.bold : FontWeight.w300,
-                color: isToday
-                    ? Colors.black
-                    : Colors
-                          .black, // or blue for today? text says "gray background"
-              ),
-            ),
-          ),
-
-          // Events
-          // Show up to 2, then +N
-          if (events.isNotEmpty) ...[
-            for (int i = 0; i < (events.length > 2 ? 2 : events.length); i++)
-              _buildEventLine(events[i]),
-
-            if (events.length > 2)
-              Text(
-                '+${events.length - 2}',
-                style: const TextStyle(fontSize: 8, color: Colors.grey),
-              ),
-          ],
-        ],
-      ),
-    );
+  int getCategoryColor(Schedule event) {
+    if (event.groupId != null) {
+      final homeController = Get.find<HomeController>();
+      final group = homeController.groups.firstWhereOrNull(
+        (g) => g.id == event.groupId,
+      );
+      if (group != null) {
+        return group.colorValue;
+      }
+    }
+    return 0xFFD9D9D9; // Default gray
   }
 
-  Widget _buildEventLine(Schedule schedule) {
-    // Show colored bar if group exists, else just text
-    // "Group color tag (vertical line or small dot)"
-    // Since we don't have group color logic easily yet, use a default distinct color for now.
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 1, horizontal: 2),
-      child: Row(
-        children: [
-          // Color tag
-          if (schedule.groupId != null) // Only if group ID exists
-            Container(
-              width: 2,
-              height: 8,
-              color: Colors.purple, // Placeholder color
-              margin: const EdgeInsets.only(right: 2),
-            ),
-
-          Expanded(
-            child: Text(
-              schedule.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 7, // Small font for calendar
-                color: schedule.isAnniversary
-                    ? Colors.red
-                    : Colors.black, // Red if anniversary??
-                // Requirement: "Anniversary style (same label style)".
-                // Let's just keep simple text for now.
-              ),
-            ),
-          ),
-        ],
-      ),
+  Widget _buildDayCell({
+    required DateTime day,
+    required Schedule? event,
+    required TextStyle dayTextStyle,
+  }) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text('${day.day}', style: dayTextStyle),
+        const SizedBox(height: 4),
+        SizedBox(
+          height: 18, // Fixed height for event text area
+          child: event == null
+              ? const SizedBox.shrink()
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Color Tag
+                    Container(
+                      width: 4,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: Color(getCategoryColor(event)),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    // Title
+                    Flexible(
+                      child: Text(
+                        event.title.length > 4
+                            ? '${event.title.substring(0, 4)}…'
+                            : event.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 9,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ],
     );
   }
 

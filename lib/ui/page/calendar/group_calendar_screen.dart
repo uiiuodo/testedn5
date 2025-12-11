@@ -213,7 +213,7 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 24),
                             child: Obx(
-                              () => TableCalendar(
+                              () => TableCalendar<Schedule>(
                                 firstDay: DateTime.utc(2020, 1, 1),
                                 lastDay: DateTime.utc(2030, 12, 31),
                                 focusedDay: controller.focusedDay.value,
@@ -241,8 +241,14 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                                   ),
                                 ),
                                 calendarStyle: const CalendarStyle(
+                                  // Transparent decorations to avoid default circles/squares
                                   selectedDecoration: BoxDecoration(
                                     color: Colors.transparent,
+                                    shape: BoxShape.rectangle,
+                                  ),
+                                  todayDecoration: BoxDecoration(
+                                    color: Colors.transparent,
+                                    shape: BoxShape.rectangle,
                                   ),
                                   selectedTextStyle: TextStyle(
                                     color: Colors.black,
@@ -271,33 +277,84 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                                     );
                                   },
                                   defaultBuilder: (context, day, focusedDay) {
+                                    final items = controller.getDayItems(day);
+                                    final firstEvent = items.isNotEmpty
+                                        ? items.first
+                                        : null;
+
+                                    // Determine text style based on day of week
+                                    Color dayColor = AppColors.textPrimary;
+                                    if (day.weekday == DateTime.sunday) {
+                                      dayColor = const Color(0xFFFF0000);
+                                    } else if (day.weekday ==
+                                        DateTime.saturday) {
+                                      dayColor = const Color(0xFF0084FF);
+                                    }
+
                                     return _buildDayCell(
-                                      controller,
-                                      day,
-                                      false,
-                                    );
-                                  },
-                                  selectedBuilder: (context, day, focusedDay) {
-                                    return _buildDayCell(
-                                      controller,
-                                      day,
-                                      false,
+                                      day: day,
+                                      event: firstEvent,
+                                      dayTextStyle: TextStyle(
+                                        color: dayColor,
+                                        fontWeight: FontWeight.w400,
+                                        fontSize: 12,
+                                      ),
                                     );
                                   },
                                   todayBuilder: (context, day, focusedDay) {
+                                    final items = controller.getDayItems(day);
+                                    final firstEvent = items.isNotEmpty
+                                        ? items.first
+                                        : null;
                                     return _buildDayCell(
-                                      controller,
-                                      day,
-                                      false,
-                                      isToday: true,
+                                      day: day,
+                                      event: firstEvent,
+                                      dayTextStyle: const TextStyle(
+                                        color: Colors.black, // Today color
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    );
+                                  },
+                                  selectedBuilder: (context, day, focusedDay) {
+                                    final items = controller.getDayItems(day);
+                                    final firstEvent = items.isNotEmpty
+                                        ? items.first
+                                        : null;
+                                    return _buildDayCell(
+                                      day: day,
+                                      event: firstEvent,
+                                      dayTextStyle: const TextStyle(
+                                        color: Colors.black, // Selected color
+                                        fontWeight: FontWeight.w400,
+                                        fontSize: 12,
+                                      ),
                                     );
                                   },
                                   outsideBuilder: (context, day, focusedDay) {
+                                    final items = controller.getDayItems(day);
+                                    final firstEvent = items.isNotEmpty
+                                        ? items.first
+                                        : null;
+
+                                    // Outside color logic
+                                    Color dayColor = AppColors.textPrimary;
+                                    if (day.weekday == DateTime.sunday) {
+                                      dayColor = const Color(0xFFFF0000);
+                                    } else if (day.weekday ==
+                                        DateTime.saturday) {
+                                      dayColor = const Color(0xFF0084FF);
+                                    }
+                                    dayColor = dayColor.withOpacity(0.3);
+
                                     return _buildDayCell(
-                                      controller,
-                                      day,
-                                      false,
-                                      isOutside: true,
+                                      day: day,
+                                      event: firstEvent,
+                                      dayTextStyle: TextStyle(
+                                        color: dayColor,
+                                        fontWeight: FontWeight.w400,
+                                        fontSize: 12,
+                                      ),
                                     );
                                   },
                                   markerBuilder: (context, day, events) {
@@ -765,98 +822,64 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
     );
   }
 
-  Widget _buildDayCell(
-    GroupCalendarController controller,
-    DateTime day,
-    bool isSelected, {
-    bool isToday = false,
-    bool isOutside = false,
+  int getCategoryColor(Schedule event) {
+    if (event.groupId != null) {
+      final homeController = Get.find<HomeController>();
+      final group = homeController.groups.firstWhereOrNull(
+        (g) => g.id == event.groupId,
+      );
+      if (group != null) {
+        return group.colorValue;
+      }
+    }
+    return 0xFFD9D9D9; // Default gray
+  }
+
+  Widget _buildDayCell({
+    required DateTime day,
+    required Schedule? event,
+    required TextStyle dayTextStyle,
   }) {
-    final items = controller.getDayItems(day);
-
-    // Day number color
-    Color dayColor = AppColors.textPrimary;
-    if (day.weekday == DateTime.sunday) {
-      dayColor = const Color(0xFFFF0000);
-    } else if (day.weekday == DateTime.saturday) {
-      dayColor = const Color(0xFF0084FF);
-    }
-    if (isOutside) {
-      dayColor = dayColor.withOpacity(0.3);
-    }
-
-    return Container(
-      margin: const EdgeInsets.all(2),
-      decoration: BoxDecoration(
-        color: isToday ? const Color(0xFFF2F2F2) : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
-        border: isSelected
-            ? Border.all(color: AppColors.primary, width: 1)
-            : null,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Day Number
-          Padding(
-            padding: const EdgeInsets.only(top: 4, left: 6),
-            child: Text(
-              '${day.day}',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w300,
-                color: dayColor,
-              ),
-            ),
-          ),
-          const SizedBox(height: 2),
-
-          // Events List
-          Container(
-            height: 22, // Fixed height 22px
-            margin: const EdgeInsets.only(bottom: 2), // Margin bottom 2px
-            padding: const EdgeInsets.symmetric(
-              horizontal: 4,
-            ), // Padding horizontal 4
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min, // Min size to avoid overflow
-              children: [
-                ...items.take(1).map((item) {
-                  // Limit to 1 item to fit in 22px
-                  return Row(
-                    children: [
-                      // Color Bar
-                      Container(
-                        width: 2,
-                        height: 10,
-                        color: item.groupColor != null
-                            ? Color(item.groupColor!)
-                            : const Color(0xFFD9D9D9),
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text('${day.day}', style: dayTextStyle),
+        const SizedBox(height: 4),
+        SizedBox(
+          height: 18, // Fixed height for event text area
+          child: event == null
+              ? const SizedBox.shrink()
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Color Tag
+                    Container(
+                      width: 4,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: Color(getCategoryColor(event)),
+                        borderRadius: BorderRadius.circular(2),
                       ),
-                      const SizedBox(width: 4),
-                      // Title
-                      Expanded(
-                        child: Text(
-                          item.title,
-                          style: const TextStyle(
-                            fontSize: 10, // Font size 10
-                            color: Color(0xFF4A4A4A),
-                            fontWeight: FontWeight.w400,
-                            overflow: TextOverflow.ellipsis, // Ellipsis
-                            height: 1.0,
-                          ),
-                          maxLines: 1, // Max lines 1
+                    ),
+                    const SizedBox(width: 4),
+                    // Title
+                    Flexible(
+                      child: Text(
+                        event.title.length > 4
+                            ? '${event.title.substring(0, 4)}…'
+                            : event.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 9,
+                          color: Colors.black87,
                         ),
                       ),
-                    ],
-                  );
-                }),
-              ],
-            ),
-          ),
-        ],
-      ),
+                    ),
+                  ],
+                ),
+        ),
+      ],
     );
   }
 
