@@ -161,9 +161,10 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                                         return DayEventsSheet(
                                           scrollController: scrollController,
                                           selectedDate: selectedDay,
-                                          events: controller.getDayItems(
-                                            selectedDay,
-                                          ),
+                                          dayGroups: controller
+                                              .getDayScheduleGroups(
+                                                selectedDay,
+                                              ),
                                           homeController:
                                               Get.find<HomeController>(),
                                           onTapSchedule: (schedule) async {

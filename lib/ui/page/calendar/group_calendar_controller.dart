@@ -9,6 +9,7 @@ import '../../../../data/repository/person_repository.dart';
 import '../home/home_controller.dart';
 import '../../../../data/repository/planned_task_repository.dart';
 import '../../../../data/model/planned_task.dart';
+import '../../../../data/model/day_schedule_groups.dart';
 
 class GroupCalendarController extends GetxController {
   final Rx<DateTime> focusedDay = DateTime.now().obs;
@@ -178,6 +179,37 @@ class GroupCalendarController extends GetxController {
     });
 
     return items;
+  }
+
+  DayScheduleGroups getDayScheduleGroups(DateTime day) {
+    final List<Schedule> all = getDayItems(day);
+
+    final care = <Schedule>[];
+    final anniversary = <Schedule>[];
+    final normal = <Schedule>[];
+
+    for (final s in all) {
+      // Logic from user request
+      // Care: isImportant (User said isCare)
+      final bool isCare = s.isImportant == true;
+      // Anniversary: isAnniversary OR birthday
+      final bool isBirthday = s.id.startsWith('birthday_');
+      final bool isAnniv = s.isAnniversary == true || isBirthday;
+
+      if (isCare) {
+        care.add(s);
+      } else if (isAnniv) {
+        anniversary.add(s);
+      } else {
+        normal.add(s);
+      }
+    }
+
+    return DayScheduleGroups(
+      normal: normal,
+      care: care,
+      anniversary: anniversary,
+    );
   }
 
   Future<void> addPlannedTask(String content) async {

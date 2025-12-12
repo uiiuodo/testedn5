@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../../../data/model/schedule.dart';
+import '../../../../data/model/day_schedule_groups.dart'; // Import this
 import '../../page/home/home_controller.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
@@ -9,7 +10,8 @@ import '../../theme/app_text_styles.dart';
 class DayEventsSheet extends StatelessWidget {
   final ScrollController scrollController;
   final DateTime selectedDate;
-  final List<Schedule> events;
+  // Change events to DayScheduleGroups
+  final DayScheduleGroups dayGroups;
   final HomeController homeController;
   final Function(Schedule) onTapSchedule;
   final Function(String) onDeleteSchedule;
@@ -18,7 +20,7 @@ class DayEventsSheet extends StatelessWidget {
     super.key,
     required this.scrollController,
     required this.selectedDate,
-    required this.events,
+    required this.dayGroups, // Update constructor
     required this.homeController,
     required this.onTapSchedule,
     required this.onDeleteSchedule,
@@ -26,13 +28,10 @@ class DayEventsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Filter events
-    final careEvents = events
-        .where((s) => !s.isAnniversary || s.id.startsWith('birthday_'))
-        .toList();
-    final anniversaryEvents = events
-        .where((s) => s.isAnniversary && !s.id.startsWith('birthday_'))
-        .toList();
+    // 3-1. Re-calculate counts from groups
+    final careCount = dayGroups.care.length;
+    final annivCount = dayGroups.anniversary.length;
+    // normalCount is not used in summary text as per requirements (only care & anniv)
 
     return Container(
       decoration: const BoxDecoration(
@@ -77,8 +76,9 @@ class DayEventsSheet extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
+                      // 3-1. Summary Text
                       Text(
-                        '챙기기 ${careEvents.length} · 기념일 ${anniversaryEvents.length}',
+                        '챙기기 $careCount · 기념일 $annivCount',
                         style: AppTextStyles.caption.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -95,7 +95,8 @@ class DayEventsSheet extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                if (careEvents.isNotEmpty) ...[
+                // 3-2. Section 1: 챙기기 (Care)
+                if (dayGroups.care.isNotEmpty) ...[
                   const Text(
                     '챙기기',
                     style: TextStyle(
@@ -105,7 +106,7 @@ class DayEventsSheet extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  ...careEvents
+                  ...dayGroups.care
                       .map(
                         (e) => _EventItem(
                           schedule: e,
@@ -116,10 +117,10 @@ class DayEventsSheet extends StatelessWidget {
                       )
                       .toList(),
                   const SizedBox(height: 20),
-                ] else if (anniversaryEvents.isEmpty) ...[
-                  // Handled by the empty check below
                 ],
-                if (anniversaryEvents.isNotEmpty) ...[
+
+                // 3-2. Section 2: 기념일 (Anniversary)
+                if (dayGroups.anniversary.isNotEmpty) ...[
                   const Text(
                     '기념일',
                     style: TextStyle(
@@ -129,7 +130,7 @@ class DayEventsSheet extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  ...anniversaryEvents
+                  ...dayGroups.anniversary
                       .map(
                         (e) => _EventItem(
                           schedule: e,
@@ -140,13 +141,41 @@ class DayEventsSheet extends StatelessWidget {
                         ),
                       )
                       .toList(),
+                  const SizedBox(height: 20),
                 ],
-                if (careEvents.isEmpty && anniversaryEvents.isEmpty)
+
+                // 3-2. Section 3: 일반 (Normal)
+                if (dayGroups.normal.isNotEmpty) ...[
+                  const Text(
+                    '일반',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF9D9D9D),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ...dayGroups.normal
+                      .map(
+                        (e) => _EventItem(
+                          schedule: e,
+                          homeController: homeController,
+                          onTap: () => onTapSchedule(e),
+                          onDelete: () => onDeleteSchedule(e.id),
+                        ),
+                      )
+                      .toList(),
+                ],
+
+                // Empty State
+                if (dayGroups.care.isEmpty &&
+                    dayGroups.anniversary.isEmpty &&
+                    dayGroups.normal.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 30),
                     child: Center(
                       child: Text(
-                        '챙길 일정이 없습니다.',
+                        '일정이 없습니다.',
                         style: TextStyle(
                           fontSize: 14,
                           color: Color(0xFF9D9D9D),

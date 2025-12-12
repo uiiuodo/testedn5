@@ -6,6 +6,7 @@ import '../../home/home_controller.dart';
 import '../schedule_edit_screen.dart';
 import '../../../../data/repository/planned_task_repository.dart';
 import '../../../../data/model/planned_task.dart';
+import '../../../../data/model/day_schedule_groups.dart';
 
 class PersonCalendarController extends GetxController {
   final String personId;
@@ -111,6 +112,39 @@ class PersonCalendarController extends GetxController {
 
   List<Schedule> getDayItems(DateTime day) {
     return getEventsForDay(day);
+  }
+
+  DayScheduleGroups getDayScheduleGroups(DateTime day) {
+    // 1. Get all events for the day (reuse existing logic)
+    final List<Schedule> all = getEventsForDay(day);
+
+    final care = <Schedule>[];
+    final anniversary = <Schedule>[];
+    final normal = <Schedule>[];
+
+    for (final s in all) {
+      // Logic from user request
+      // Care: isImportant (User said isCare)
+      final bool isCare = s.isImportant == true;
+      // Anniversary: isAnniversary OR birthday (which isAnniversary is usually true for birthdays created here)
+      // Check ID for birthday just in case
+      final bool isBirthday = s.id.startsWith('birthday_');
+      final bool isAnniv = s.isAnniversary == true || isBirthday;
+
+      if (isCare) {
+        care.add(s);
+      } else if (isAnniv) {
+        anniversary.add(s);
+      } else {
+        normal.add(s);
+      }
+    }
+
+    return DayScheduleGroups(
+      normal: normal,
+      care: care,
+      anniversary: anniversary,
+    );
   }
 
   List<Schedule> getEventsForDay(DateTime day) {

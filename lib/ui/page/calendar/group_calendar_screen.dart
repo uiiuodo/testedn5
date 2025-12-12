@@ -286,9 +286,10 @@ class _GroupCalendarScreenState extends State<GroupCalendarScreen> {
                                           return DayEventsSheet(
                                             scrollController: scrollController,
                                             selectedDate: selectedDay,
-                                            events: controller.getDayItems(
-                                              selectedDay,
-                                            ),
+                                            dayGroups: controller
+                                                .getDayScheduleGroups(
+                                                  selectedDay,
+                                                ),
                                             homeController: homeController,
                                             onTapSchedule: (schedule) async {
                                               final result =
