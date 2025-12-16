@@ -13,6 +13,7 @@ import '../../widgets/common/custom_app_bar.dart';
 import 'person_detail_controller.dart';
 import 'person_edit_screen.dart';
 import '../../widgets/common/refreshable_layout.dart';
+import '../../../service/auth_service.dart';
 
 class PersonDetailScreen extends StatefulWidget {
   final String personId;
@@ -39,6 +40,16 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
           IconButton(
             icon: const Icon(Icons.edit_outlined, color: AppColors.primary),
             onPressed: () async {
+              if (AuthService.to.isGuest) {
+                Get.snackbar(
+                  '알림',
+                  '둘러보기 모드에서는 수정할 수 없어요.\n회원가입 후 이용해 주세요.',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.black.withOpacity(0.8),
+                  colorText: Colors.white,
+                );
+                return;
+              }
               // Navigate to Edit Screen with personId
               await Get.to(() => PersonEditScreen(personId: widget.personId));
               // Refresh data on return

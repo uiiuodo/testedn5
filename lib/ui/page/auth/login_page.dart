@@ -1,9 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../service/auth_service.dart';
 import '../home/home_page.dart';
+import 'sign_up_page.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  void _handleLogin() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      Get.snackbar(
+        '알림',
+        '이메일과 비밀번호를 입력해주세요.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.black.withOpacity(0.8),
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    await AuthService.to.signInWithEmail(email, password);
+    if (AuthService.to.isLoggedIn) {
+      Get.offAll(() => const HomePage());
+    }
+  }
+
+  void _handleGuestLogin() async {
+    await AuthService.to.signInAnonymously();
+    if (AuthService.to.isGuest) {
+      Get.offAll(() => const HomePage());
+      Get.snackbar(
+        '알림',
+        '둘러보기 모드로 진입했습니다. 데이터 저장이 제한됩니다.',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.black.withOpacity(0.8),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
+    }
+  }
+
+  void _showPreparationToast() {
+    Get.snackbar(
+      '알림',
+      '준비 중인 기능입니다.',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.black.withOpacity(0.8),
+      colorText: Colors.white,
+      duration: const Duration(seconds: 1),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,20 +87,22 @@ class LoginPage extends StatelessWidget {
                 const SizedBox(height: 40),
 
                 // Email Field
-                _buildTextField(hintText: '이메일'),
+                _buildTextField(controller: _emailController, hintText: '이메일'),
                 const SizedBox(height: 16),
 
                 // Password Field
-                _buildTextField(hintText: '비밀번호', obscureText: true),
+                _buildTextField(
+                  controller: _passwordController,
+                  hintText: '비밀번호',
+                  obscureText: true,
+                ),
                 const SizedBox(height: 24),
 
                 // Login Button
                 SizedBox(
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Get.offAll(() => const HomePage());
-                    },
+                    onPressed: _handleLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF333333),
                       foregroundColor: Colors.white,
@@ -69,7 +128,7 @@ class LoginPage extends StatelessWidget {
                   children: [
                     GestureDetector(
                       onTap: () {
-                        // TODO: Implement SignUp
+                        Get.to(() => const SignUpPage());
                       },
                       child: const Text(
                         '회원가입',
@@ -90,9 +149,7 @@ class LoginPage extends StatelessWidget {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () {
-                        // TODO: Implement Guest Login
-                      },
+                      onTap: _handleGuestLogin,
                       child: const Text(
                         '우선 둘러보기',
                         style: TextStyle(
@@ -119,7 +176,7 @@ class LoginPage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     _buildSnsIcon(
-                      onTap: () {},
+                      onTap: _showPreparationToast,
                       child: const Icon(
                         Icons.g_mobiledata,
                         size: 32,
@@ -128,7 +185,7 @@ class LoginPage extends StatelessWidget {
                     ),
                     const SizedBox(width: 20),
                     _buildSnsIcon(
-                      onTap: () {},
+                      onTap: _showPreparationToast,
                       child: const Text(
                         'N',
                         style: TextStyle(
@@ -140,7 +197,7 @@ class LoginPage extends StatelessWidget {
                     ),
                     const SizedBox(width: 20),
                     _buildSnsIcon(
-                      onTap: () {},
+                      onTap: _showPreparationToast,
                       child: const Icon(
                         Icons.chat_bubble,
                         size: 24,
@@ -158,7 +215,11 @@ class LoginPage extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField({required String hintText, bool obscureText = false}) {
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hintText,
+    bool obscureText = false,
+  }) {
     return Container(
       height: 56,
       decoration: BoxDecoration(
@@ -169,6 +230,7 @@ class LoginPage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       alignment: Alignment.centerLeft,
       child: TextField(
+        controller: controller,
         obscureText: obscureText,
         decoration: InputDecoration(
           hintText: hintText,

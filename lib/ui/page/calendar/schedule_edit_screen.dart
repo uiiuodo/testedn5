@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../data/model/schedule.dart';
+import '../../../../service/auth_service.dart';
 
 class ScheduleEditScreen extends StatefulWidget {
   final Schedule? schedule;
@@ -104,223 +105,242 @@ class _ScheduleEditScreenState extends State<ScheduleEditScreen> {
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-                  // Title Input
-                  TextField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(
-                      hintText: '일정을 입력하세요',
-                      hintStyle: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w300,
-                        color: Color(0xFF939393),
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  const Divider(height: 1, color: Color(0xFFDEDEDE)),
-
-                  // All Day Toggle
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Obx(() {
+                final isGuest = AuthService.to.isGuest;
+                return GestureDetector(
+                  onTap: isGuest
+                      ? () {
+                          Get.snackbar(
+                            '알림',
+                            '둘러보기 모드에서는 수정할 수 없어요.\n회원가입 후 이용해 주세요.',
+                            snackPosition: SnackPosition.BOTTOM,
+                            backgroundColor: Colors.black.withOpacity(0.8),
+                            colorText: Colors.white,
+                          );
+                        }
+                      : null,
+                  child: AbsorbPointer(
+                    absorbing: isGuest,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        const SizedBox(height: 20),
+                        // Title Input
+                        TextField(
+                          controller: _titleController,
+                          decoration: const InputDecoration(
+                            hintText: '일정을 입력하세요',
+                            hintStyle: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w300,
+                              color: Color(0xFF939393),
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.black,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        const Divider(height: 1, color: Color(0xFFDEDEDE)),
+
+                        // All Day Toggle
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.access_time,
+                                    size: 20,
+                                    color: Color(0xFF6A6A6A),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    '종일',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Color(0xFF6A6A6A),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Switch(
+                                value: _allDay,
+                                onChanged: (val) {
+                                  setState(() {
+                                    _allDay = val;
+                                    if (_allDay) {
+                                      // Set to start of day and end of day
+                                      _startDate = DateTime(
+                                        _startDate.year,
+                                        _startDate.month,
+                                        _startDate.day,
+                                        0,
+                                        0,
+                                      );
+                                      _endDate = DateTime(
+                                        _endDate.year,
+                                        _endDate.month,
+                                        _endDate.day,
+                                        23,
+                                        59,
+                                      );
+                                    }
+                                  });
+                                },
+                                activeColor: Colors.black,
+                                activeTrackColor: const Color(0xFFE1E1E1),
+                                inactiveThumbColor: const Color(0xFFFFFFFF),
+                                inactiveTrackColor: const Color(0xFFE1E1E1),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Date & Time Selection
                         Row(
                           children: [
-                            const Icon(
-                              Icons.access_time,
-                              size: 20,
-                              color: Color(0xFF6A6A6A),
+                            // Start Date
+                            Expanded(
+                              child: _buildDateTimePicker(
+                                date: _startDate,
+                                onDateChanged: (newDate) {
+                                  setState(() {
+                                    _startDate = newDate;
+                                    if (_startDate.isAfter(_endDate)) {
+                                      _endDate = _startDate.add(
+                                        const Duration(hours: 1),
+                                      );
+                                    }
+                                  });
+                                },
+                              ),
                             ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              '종일',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Color(0xFF6A6A6A),
+                            // Arrow
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              child: Icon(
+                                Icons.arrow_forward,
+                                size: 16,
+                                color: Color(0xFFDEDEDE),
+                              ),
+                            ),
+                            // End Date
+                            Expanded(
+                              child: _buildDateTimePicker(
+                                date: _endDate,
+                                onDateChanged: (newDate) {
+                                  setState(() {
+                                    _endDate = newDate;
+                                  });
+                                },
                               ),
                             ),
                           ],
                         ),
-                        Switch(
-                          value: _allDay,
+                        const SizedBox(height: 16),
+                        const Divider(height: 1, color: Color(0xFFDEDEDE)),
+
+                        // Repeat
+                        _buildOptionRow(
+                          icon: Icons.repeat,
+                          label: '반복',
+                          value: _getRepeatLabel(_repeatType),
+                          onTap: _showRepeatPicker,
+                        ),
+                        const Divider(height: 1, color: Color(0xFFDEDEDE)),
+
+                        // Alarm
+                        _buildOptionRow(
+                          icon: Icons.notifications_none,
+                          label: '알림',
+                          value: _getAlarmLabel(_alarmOffsetMinutes),
+                          onTap: _showAlarmPicker,
+                        ),
+                        const Divider(height: 1, color: Color(0xFFDEDEDE)),
+
+                        // Description
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(
+                                Icons.description_outlined,
+                                size: 20,
+                                color: Color(0xFF6A6A6A),
+                              ),
+                              const SizedBox(width: 12),
+                              const Text(
+                                '설명',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF6A6A6A),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: TextField(
+                                  controller: _descriptionController,
+                                  maxLines: null,
+                                  decoration: const InputDecoration.collapsed(
+                                    hintText: '설명 추가',
+                                    hintStyle: TextStyle(
+                                      fontSize: 13,
+                                      color: Color(0xFFB0B0B0),
+                                    ),
+                                  ),
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF6A6A6A),
+                                  ),
+                                  textAlign: TextAlign.end,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Divider(height: 1, color: Color(0xFFDEDEDE)),
+
+                        // Anniversary Toggle
+                        _buildSwitchRow(
+                          icon: Icons.cake_outlined,
+                          label: '기념일',
+                          value: _isAnniversary,
                           onChanged: (val) {
                             setState(() {
-                              _allDay = val;
-                              if (_allDay) {
-                                // Set to start of day and end of day
-                                _startDate = DateTime(
-                                  _startDate.year,
-                                  _startDate.month,
-                                  _startDate.day,
-                                  0,
-                                  0,
-                                );
-                                _endDate = DateTime(
-                                  _endDate.year,
-                                  _endDate.month,
-                                  _endDate.day,
-                                  23,
-                                  59,
-                                );
-                              }
+                              _isAnniversary = val;
+                              // If anniversary, maybe default repeat to yearly?
+                              // For now keeping logic simple as requested.
                             });
                           },
-                          activeColor: Colors.black,
-                          activeTrackColor: const Color(0xFFE1E1E1),
-                          inactiveThumbColor: const Color(0xFFFFFFFF),
-                          inactiveTrackColor: const Color(0xFFE1E1E1),
                         ),
+                        const Divider(height: 1, color: Color(0xFFDEDEDE)),
+
+                        // Important Toggle
+                        _buildSwitchRow(
+                          icon: Icons.favorite_border,
+                          label: '챙기기',
+                          value: _isImportant,
+                          onChanged: (val) {
+                            setState(() {
+                              _isImportant = val;
+                            });
+                          },
+                        ),
+
+                        const SizedBox(height: 40),
                       ],
                     ),
                   ),
-
-                  // Date & Time Selection
-                  Row(
-                    children: [
-                      // Start Date
-                      Expanded(
-                        child: _buildDateTimePicker(
-                          date: _startDate,
-                          onDateChanged: (newDate) {
-                            setState(() {
-                              _startDate = newDate;
-                              if (_startDate.isAfter(_endDate)) {
-                                _endDate = _startDate.add(
-                                  const Duration(hours: 1),
-                                );
-                              }
-                            });
-                          },
-                        ),
-                      ),
-                      // Arrow
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Icon(
-                          Icons.arrow_forward,
-                          size: 16,
-                          color: Color(0xFFDEDEDE),
-                        ),
-                      ),
-                      // End Date
-                      Expanded(
-                        child: _buildDateTimePicker(
-                          date: _endDate,
-                          onDateChanged: (newDate) {
-                            setState(() {
-                              _endDate = newDate;
-                            });
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const Divider(height: 1, color: Color(0xFFDEDEDE)),
-
-                  // Repeat
-                  _buildOptionRow(
-                    icon: Icons.repeat,
-                    label: '반복',
-                    value: _getRepeatLabel(_repeatType),
-                    onTap: _showRepeatPicker,
-                  ),
-                  const Divider(height: 1, color: Color(0xFFDEDEDE)),
-
-                  // Alarm
-                  _buildOptionRow(
-                    icon: Icons.notifications_none,
-                    label: '알림',
-                    value: _getAlarmLabel(_alarmOffsetMinutes),
-                    onTap: _showAlarmPicker,
-                  ),
-                  const Divider(height: 1, color: Color(0xFFDEDEDE)),
-
-                  // Description
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(
-                          Icons.description_outlined,
-                          size: 20,
-                          color: Color(0xFF6A6A6A),
-                        ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          '설명',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF6A6A6A),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: TextField(
-                            controller: _descriptionController,
-                            maxLines: null,
-                            decoration: const InputDecoration.collapsed(
-                              hintText: '설명 추가',
-                              hintStyle: TextStyle(
-                                fontSize: 13,
-                                color: Color(0xFFB0B0B0),
-                              ),
-                            ),
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF6A6A6A),
-                            ),
-                            textAlign: TextAlign.end,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1, color: Color(0xFFDEDEDE)),
-
-                  // Anniversary Toggle
-                  _buildSwitchRow(
-                    icon: Icons.cake_outlined,
-                    label: '기념일',
-                    value: _isAnniversary,
-                    onChanged: (val) {
-                      setState(() {
-                        _isAnniversary = val;
-                        // If anniversary, maybe default repeat to yearly?
-                        // For now keeping logic simple as requested.
-                      });
-                    },
-                  ),
-                  const Divider(height: 1, color: Color(0xFFDEDEDE)),
-
-                  // Important Toggle
-                  _buildSwitchRow(
-                    icon: Icons.favorite_border,
-                    label: '챙기기',
-                    value: _isImportant,
-                    onChanged: (val) {
-                      setState(() {
-                        _isImportant = val;
-                      });
-                    },
-                  ),
-
-                  const SizedBox(height: 40),
-                ],
-              ),
+                );
+              }),
             ),
           ),
 
@@ -328,7 +348,19 @@ class _ScheduleEditScreenState extends State<ScheduleEditScreen> {
           Padding(
             padding: const EdgeInsets.all(24.0),
             child: GestureDetector(
-              onTap: _saveSchedule,
+              onTap: () {
+                if (AuthService.to.isGuest) {
+                  Get.snackbar(
+                    '알림',
+                    '둘러보기 모드에서는 저장할 수 없어요.\n회원가입 후 이용해 주세요.',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.black.withOpacity(0.8),
+                    colorText: Colors.white,
+                  );
+                  return;
+                }
+                _saveSchedule();
+              },
               child: Container(
                 width: double.infinity,
                 height: 56,

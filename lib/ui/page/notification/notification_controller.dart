@@ -1,7 +1,5 @@
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
-import '../../../data/model/person.dart';
-import '../../../data/model/schedule.dart';
+
 import '../../../data/repository/person_repository.dart';
 import '../../../data/repository/schedule_repository.dart';
 
