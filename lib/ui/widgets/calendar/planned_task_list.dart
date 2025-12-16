@@ -25,7 +25,20 @@ class _PlannedTaskListState extends State<PlannedTaskList> {
   final FocusNode _addFocusNode = FocusNode();
 
   @override
+  void initState() {
+    super.initState();
+    _addFocusNode.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    if (!_addFocusNode.hasFocus) {
+      _submitAdd();
+    }
+  }
+
+  @override
   void dispose() {
+    _addFocusNode.removeListener(_onFocusChange);
     _addController.dispose();
     _addFocusNode.dispose();
     super.dispose();
@@ -42,16 +55,19 @@ class _PlannedTaskListState extends State<PlannedTaskList> {
   }
 
   void _cancelAdding() {
-    setState(() {
-      _isAdding = false;
-      _addController.clear();
-    });
+    if (mounted) {
+      setState(() {
+        _isAdding = false;
+        _addController.clear();
+      });
+    }
   }
 
   void _submitAdd() {
     if (_addController.text.trim().isNotEmpty) {
       widget.onAdd(_addController.text.trim());
     }
+    // _cancelAdding() is called by setState check in listener or manual cancel
     _cancelAdding();
   }
 
@@ -128,18 +144,24 @@ class _PlannedTaskListState extends State<PlannedTaskList> {
                       fontWeight: FontWeight.w300,
                       height: 1.5,
                     ),
+                    maxLines: null,
+                    keyboardType: TextInputType.multiline,
+                    textInputAction: TextInputAction.newline,
                     decoration: const InputDecoration(
                       isDense: true,
                       contentPadding: EdgeInsets.zero,
                       border: InputBorder.none,
-                      hintText: '입력 후 완료를 누르세요',
+                      focusedBorder: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      errorBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
+                      hintText: '입력 후 바깥 영역을 누르세요',
                       hintStyle: TextStyle(
                         color: Color(0xFFB0B0B0),
                         fontSize: 10,
                       ),
                     ),
-                    onSubmitted: (_) => _submitAdd(),
-                    textInputAction: TextInputAction.done,
+                    // onSubmitted removed, handled by focus listener
                   ),
                 ),
             ],
@@ -185,10 +207,18 @@ class _EditableTaskItemState extends State<_EditableTaskItem> {
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.task.content);
+    _focusNode.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    if (!_focusNode.hasFocus) {
+      _submitEdit();
+    }
   }
 
   @override
   void dispose() {
+    _focusNode.removeListener(_onFocusChange);
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -205,15 +235,20 @@ class _EditableTaskItemState extends State<_EditableTaskItem> {
   }
 
   void _submitEdit() {
+    if (!mounted) return;
+
     if (_controller.text.trim().isNotEmpty &&
         _controller.text.trim() != widget.task.content) {
       widget.onUpdate(widget.task, _controller.text.trim());
     } else if (_controller.text.trim().isEmpty) {
       _controller.text = widget.task.content; // Revert if empty
     }
-    setState(() {
-      _isEditing = false;
-    });
+
+    if (mounted) {
+      setState(() {
+        _isEditing = false;
+      });
+    }
   }
 
   @override
@@ -255,14 +290,19 @@ class _EditableTaskItemState extends State<_EditableTaskItem> {
                         fontWeight: FontWeight.w300,
                         height: 1.5,
                       ),
+                      maxLines: null,
+                      keyboardType: TextInputType.multiline,
+                      textInputAction: TextInputAction.newline,
                       decoration: const InputDecoration(
                         isDense: true,
                         contentPadding: EdgeInsets.zero,
                         border: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        errorBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
                       ),
-                      onSubmitted: (_) => _submitEdit(),
-                      onEditingComplete: _submitEdit,
-                      textInputAction: TextInputAction.done,
+                      // onSubmitted removed, handled by focus listener
                     )
                   : Text(
                       widget.task.content,
