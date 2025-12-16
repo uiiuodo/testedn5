@@ -20,393 +20,422 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                Expanded(
-                  child: RefreshableLayout(
-                    onRefresh: () async {
-                      await controller.fetchSchedules();
-                    },
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 20),
-                          // Header
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24.0,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () => Get.back(),
-                                      child: const Icon(
-                                        Icons.arrow_back_ios,
-                                        size: 20,
-                                        color: Colors.black,
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Stack(
+            children: [
+              Column(
+                children: [
+                  Expanded(
+                    child: RefreshableLayout(
+                      onRefresh: () async {
+                        await controller.fetchSchedules();
+                      },
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 20),
+                            // Header
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24.0,
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      GestureDetector(
+                                        onTap: () => Get.back(),
+                                        child: const Icon(
+                                          Icons.arrow_back_ios,
+                                          size: 20,
+                                          color: Colors.black,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Obx(() {
-                                      if (controller.isOnTodayMonth)
-                                        return const SizedBox.shrink();
-                                      return GestureDetector(
-                                        onTap: controller.goToToday,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            border: Border.all(
-                                              color: const Color(0xFFE0E0E0),
+                                      const SizedBox(height: 12),
+                                      Obx(() {
+                                        if (controller.isOnTodayMonth)
+                                          return const SizedBox.shrink();
+                                        return GestureDetector(
+                                          onTap: controller.goToToday,
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
                                             ),
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: const [
-                                              Icon(
-                                                Icons.arrow_back,
-                                                size: 12,
-                                                color: Color(0xFF565656),
+                                            decoration: BoxDecoration(
+                                              border: Border.all(
+                                                color: const Color(0xFFE0E0E0),
                                               ),
-                                              SizedBox(width: 4),
-                                              Text(
-                                                '현재 날짜로 돌아가기',
-                                                style: TextStyle(
-                                                  fontSize: 10,
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: const [
+                                                Icon(
+                                                  Icons.arrow_back,
+                                                  size: 12,
                                                   color: Color(0xFF565656),
-                                                  fontWeight: FontWeight.w500,
                                                 ),
-                                              ),
-                                            ],
+                                                SizedBox(width: 4),
+                                                Text(
+                                                  '현재 날짜로 돌아가기',
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    color: Color(0xFF565656),
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      }),
+                                    ],
+                                  ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Obx(
+                                        () => Text(
+                                          '${controller.focusedDay.value.year}',
+                                          style: const TextStyle(
+                                            color: Color(0xFF979797),
+                                            fontSize: 15,
+                                            fontFamily: 'Noto Sans',
+                                            fontWeight: FontWeight.w500,
+                                            height: 1.0,
+                                          ),
+                                        ),
+                                      ),
+                                      Obx(
+                                        () => Text(
+                                          '${controller.focusedDay.value.month}',
+                                          style: const TextStyle(
+                                            color: Colors.black,
+                                            fontSize: 32,
+                                            fontFamily: 'Noto Sans',
+                                            fontWeight: FontWeight.w500,
+                                            height: 1.0,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 30),
+                            // Calendar
+                            Obx(() {
+                              // Explicitly depend on reactive variables to trigger rebuilds
+                              // ignore: unused_local_variable
+                              final _ = controller.events.length;
+
+                              return TableCalendar(
+                                firstDay: DateTime(2020, 1, 1),
+                                lastDay: DateTime(2030, 12, 31),
+                                focusedDay: controller.focusedDay.value,
+                                selectedDayPredicate: (day) => isSameDay(
+                                  controller.selectedDay.value,
+                                  day,
+                                ),
+                                onDaySelected: (selectedDay, focusedDay) {
+                                  controller.onDaySelected(
+                                    selectedDay,
+                                    focusedDay,
+                                  );
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.transparent,
+                                    builder: (context) {
+                                      return DraggableScrollableSheet(
+                                        initialChildSize: 0.5,
+                                        minChildSize: 0.25,
+                                        maxChildSize: 0.9,
+                                        expand: false,
+                                        builder: (context, scrollController) {
+                                          return Obx(
+                                            () => DayEventsSheet(
+                                              scrollController:
+                                                  scrollController,
+                                              selectedDate: selectedDay,
+                                              dayGroups: controller
+                                                  .getDayScheduleGroups(
+                                                    selectedDay,
+                                                  ),
+                                              homeController:
+                                                  Get.find<HomeController>(),
+                                              onTapSchedule: (schedule) async {
+                                                final result =
+                                                    await Get.bottomSheet(
+                                                      ScheduleEditScreen(
+                                                        schedule: schedule,
+                                                        personId:
+                                                            controller.personId,
+                                                      ),
+                                                      isScrollControlled: true,
+                                                      backgroundColor:
+                                                          Colors.transparent,
+                                                    );
+                                                if (result != null &&
+                                                    result is Schedule) {
+                                                  await controller
+                                                      .updateSchedule(result);
+                                                } else {
+                                                  await controller
+                                                      .fetchSchedules();
+                                                }
+                                              },
+                                              onDeleteSchedule: (id) async {
+                                                await controller.deleteSchedule(
+                                                  id,
+                                                );
+                                              },
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    },
+                                  );
+                                },
+                                headerVisible: false,
+                                daysOfWeekHeight: 20,
+                                rowHeight: 60, // 1) Modified rowHeight
+                                calendarFormat: CalendarFormat.month,
+                                availableGestures:
+                                    AvailableGestures.horizontalSwipe,
+                                onPageChanged: (focusedDay) {
+                                  controller.onPageChanged(focusedDay);
+                                },
+                                daysOfWeekStyle: const DaysOfWeekStyle(
+                                  weekdayStyle: TextStyle(
+                                    color: Color(0xFF4A4A4A),
+                                    fontSize: 8,
+                                    fontFamily: 'Noto Sans',
+                                    fontWeight: FontWeight.w300,
+                                  ),
+                                  weekendStyle: TextStyle(
+                                    color: Color(0xFF0084FF),
+                                    fontSize: 8,
+                                    fontFamily: 'Noto Sans',
+                                    fontWeight: FontWeight.w300,
+                                  ),
+                                ),
+                                calendarStyle: const CalendarStyle(
+                                  selectedDecoration: BoxDecoration(
+                                    color: Colors.transparent,
+                                  ),
+                                  selectedTextStyle: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                calendarBuilders: CalendarBuilders(
+                                  dowBuilder: (context, day) {
+                                    if (day.weekday == DateTime.sunday) {
+                                      return const Center(
+                                        child: Text(
+                                          'Sun',
+                                          style: TextStyle(
+                                            color: Color(0xFFFF0000),
+                                            fontSize: 8,
+                                            fontFamily: 'Noto Sans',
+                                            fontWeight: FontWeight.w300,
                                           ),
                                         ),
                                       );
-                                    }),
-                                  ],
-                                ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Obx(
-                                      () => Text(
-                                        '${controller.focusedDay.value.year}',
-                                        style: const TextStyle(
-                                          color: Color(0xFF979797),
-                                          fontSize: 15,
-                                          fontFamily: 'Noto Sans',
-                                          fontWeight: FontWeight.w500,
-                                          height: 1.0,
-                                        ),
-                                      ),
-                                    ),
-                                    Obx(
-                                      () => Text(
-                                        '${controller.focusedDay.value.month}',
-                                        style: const TextStyle(
-                                          color: Colors.black,
-                                          fontSize: 32,
-                                          fontFamily: 'Noto Sans',
-                                          fontWeight: FontWeight.w500,
-                                          height: 1.0,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 30),
-                          // Calendar
-                          Obx(() {
-                            // Explicitly depend on reactive variables to trigger rebuilds
-                            // ignore: unused_local_variable
-                            final _ = controller.events.length;
-
-                            return TableCalendar(
-                              firstDay: DateTime(2020, 1, 1),
-                              lastDay: DateTime(2030, 12, 31),
-                              focusedDay: controller.focusedDay.value,
-                              selectedDayPredicate: (day) =>
-                                  isSameDay(controller.selectedDay.value, day),
-                              onDaySelected: (selectedDay, focusedDay) {
-                                controller.onDaySelected(
-                                  selectedDay,
-                                  focusedDay,
-                                );
-                                showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  backgroundColor: Colors.transparent,
-                                  builder: (context) {
-                                    return DraggableScrollableSheet(
-                                      initialChildSize: 0.5,
-                                      minChildSize: 0.25,
-                                      maxChildSize: 0.9,
-                                      expand: false,
-                                      builder: (context, scrollController) {
-                                        return Obx(
-                                          () => DayEventsSheet(
-                                            scrollController: scrollController,
-                                            selectedDate: selectedDay,
-                                            dayGroups: controller
-                                                .getDayScheduleGroups(
-                                                  selectedDay,
-                                                ),
-                                            homeController:
-                                                Get.find<HomeController>(),
-                                            onTapSchedule: (schedule) async {
-                                              final result =
-                                                  await Get.bottomSheet(
-                                                    ScheduleEditScreen(
-                                                      schedule: schedule,
-                                                      personId:
-                                                          controller.personId,
-                                                    ),
-                                                    isScrollControlled: true,
-                                                    backgroundColor:
-                                                        Colors.transparent,
-                                                  );
-                                              if (result != null &&
-                                                  result is Schedule) {
-                                                await controller.updateSchedule(
-                                                  result,
-                                                );
-                                              } else {
-                                                await controller
-                                                    .fetchSchedules();
-                                              }
-                                            },
-                                            onDeleteSchedule: (id) async {
-                                              await controller.deleteSchedule(
-                                                id,
-                                              );
-                                            },
-                                          ),
-                                        );
-                                      },
-                                    );
+                                    }
+                                    return null;
                                   },
-                                );
-                              },
-                              headerVisible: false,
-                              daysOfWeekHeight: 20,
-                              rowHeight: 60, // 1) Modified rowHeight
-                              calendarFormat: CalendarFormat.month,
-                              availableGestures:
-                                  AvailableGestures.horizontalSwipe,
-                              onPageChanged: (focusedDay) {
-                                controller.onPageChanged(focusedDay);
-                              },
-                              daysOfWeekStyle: const DaysOfWeekStyle(
-                                weekdayStyle: TextStyle(
-                                  color: Color(0xFF4A4A4A),
-                                  fontSize: 8,
-                                  fontFamily: 'Noto Sans',
-                                  fontWeight: FontWeight.w300,
+                                  defaultBuilder: (context, day, focusedDay) =>
+                                      _buildDayCell(controller, day, false),
+                                  selectedBuilder: (context, day, focusedDay) =>
+                                      _buildDayCell(controller, day, false),
+                                  todayBuilder: (context, day, focusedDay) =>
+                                      _buildDayCell(
+                                        controller,
+                                        day,
+                                        false,
+                                        isToday: true,
+                                      ),
+                                  outsideBuilder: (context, day, focusedDay) =>
+                                      _buildDayCell(
+                                        controller,
+                                        day,
+                                        false,
+                                        isOutside: true,
+                                      ),
+                                  markerBuilder: (context, day, events) =>
+                                      const SizedBox.shrink(),
                                 ),
-                                weekendStyle: TextStyle(
-                                  color: Color(0xFF0084FF),
-                                  fontSize: 8,
-                                  fontFamily: 'Noto Sans',
-                                  fontWeight: FontWeight.w300,
-                                ),
-                              ),
-                              calendarStyle: const CalendarStyle(
-                                selectedDecoration: BoxDecoration(
-                                  color: Colors.transparent,
-                                ),
-                                selectedTextStyle: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              calendarBuilders: CalendarBuilders(
-                                dowBuilder: (context, day) {
-                                  if (day.weekday == DateTime.sunday) {
-                                    return const Center(
-                                      child: Text(
-                                        'Sun',
-                                        style: TextStyle(
-                                          color: Color(0xFFFF0000),
-                                          fontSize: 8,
-                                          fontFamily: 'Noto Sans',
-                                          fontWeight: FontWeight.w300,
+                              );
+                            }),
+
+                            const SizedBox(height: 20),
+                            const Divider(
+                              thickness: 1,
+                              color: Color(0xFFF5F5F5),
+                            ),
+
+                            const SizedBox(height: 10),
+                            const SizedBox(height: 10),
+                            // Add Schedule Button
+                            Center(
+                              child: GestureDetector(
+                                onTap: () async {
+                                  final result = await Get.bottomSheet(
+                                    ScheduleEditScreen(
+                                      initialDate:
+                                          controller.selectedDay.value ??
+                                          DateTime.now(),
+                                      isPlanned:
+                                          false, // Always false for confirmed schedule
+                                      personId: controller.personId,
+                                    ),
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.transparent,
+                                  );
+                                  if (result != null && result is Schedule) {
+                                    await controller.addSchedule(result);
+                                  } else {
+                                    await controller.fetchSchedules();
+                                  }
+                                },
+                                child: Container(
+                                  width: 291,
+                                  height: 41,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF414141),
+                                    borderRadius: BorderRadius.circular(20.5),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        width: 11,
+                                        height: 11,
+                                        decoration: const BoxDecoration(
+                                          color: Colors.white,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.add,
+                                          size: 10,
+                                          color: Color(0xFF414141),
                                         ),
                                       ),
-                                    );
-                                  }
-                                  return null;
-                                },
-                                defaultBuilder: (context, day, focusedDay) =>
-                                    _buildDayCell(controller, day, false),
-                                selectedBuilder: (context, day, focusedDay) =>
-                                    _buildDayCell(controller, day, false),
-                                todayBuilder: (context, day, focusedDay) =>
-                                    _buildDayCell(
-                                      controller,
-                                      day,
-                                      false,
-                                      isToday: true,
-                                    ),
-                                outsideBuilder: (context, day, focusedDay) =>
-                                    _buildDayCell(
-                                      controller,
-                                      day,
-                                      false,
-                                      isOutside: true,
-                                    ),
-                                markerBuilder: (context, day, events) =>
-                                    const SizedBox.shrink(),
-                              ),
-                            );
-                          }),
-
-                          const SizedBox(height: 20),
-                          const Divider(thickness: 1, color: Color(0xFFF5F5F5)),
-
-                          const SizedBox(height: 10),
-                          const SizedBox(height: 10),
-                          // Add Schedule Button
-                          Center(
-                            child: GestureDetector(
-                              onTap: () async {
-                                final result = await Get.bottomSheet(
-                                  ScheduleEditScreen(
-                                    initialDate:
-                                        controller.selectedDay.value ??
-                                        DateTime.now(),
-                                    isPlanned:
-                                        false, // Always false for confirmed schedule
-                                    personId: controller.personId,
+                                      const SizedBox(width: 8),
+                                      const Text(
+                                        '이 사람과의 일정 추가하기',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontFamily: 'Noto Sans',
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  isScrollControlled: true,
-                                  backgroundColor: Colors.transparent,
-                                );
-                                if (result != null && result is Schedule) {
-                                  await controller.addSchedule(result);
-                                } else {
-                                  await controller.fetchSchedules();
-                                }
-                              },
-                              child: Container(
-                                width: 291,
-                                height: 41,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF414141),
-                                  borderRadius: BorderRadius.circular(20.5),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Container(
-                                      width: 11,
-                                      height: 11,
-                                      decoration: const BoxDecoration(
-                                        color: Colors.white,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Icon(
-                                        Icons.add,
-                                        size: 10,
-                                        color: Color(0xFF414141),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    const Text(
-                                      '이 사람과의 일정 추가하기',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontFamily: 'Noto Sans',
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 40),
-                          // Planned Tasks List
-                          Obx(
-                            () => PlannedTaskList(
-                              tasks: controller.plannedTasks.toList(),
-                              onAdd: controller.addPlannedTask,
-                              onUpdate: controller.updatePlannedTask,
-                              onDelete: controller.deletePlannedTask,
+                            const SizedBox(height: 40),
+                            // Planned Tasks List
+                            Obx(
+                              () => PlannedTaskList(
+                                tasks: controller.plannedTasks.toList(),
+                                onAdd: (content) async {
+                                  await controller.addPlannedTask(content);
+                                  Get.snackbar(
+                                    '저장 완료',
+                                    '계획해야 하는 일정이 저장되었습니다.',
+                                    snackPosition: SnackPosition.BOTTOM,
+                                    duration: const Duration(
+                                      milliseconds: 1000,
+                                    ),
+                                    margin: const EdgeInsets.all(16),
+                                    backgroundColor: Colors.black.withOpacity(
+                                      0.8,
+                                    ),
+                                    colorText: Colors.white,
+                                    snackStyle: SnackStyle.FLOATING,
+                                    barBlur: 0,
+                                    animationDuration: const Duration(
+                                      milliseconds: 200,
+                                    ),
+                                  );
+                                },
+                                onUpdate: controller.updatePlannedTask,
+                                onDelete: controller.deletePlannedTask,
+                              ),
                             ),
+                            const SizedBox(height: 40),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          offset: const Offset(0, -4),
+                          blurRadius: 6,
+                        ),
+                      ],
+                    ),
+                    child: SafeArea(
+                      top: false,
+                      child: BottomNavigationBar(
+                        type: BottomNavigationBarType.fixed,
+                        backgroundColor: Colors.white,
+                        elevation: 0,
+                        currentIndex: 1,
+                        onTap: (index) {
+                          if (index == 0) Get.back();
+                        },
+                        selectedItemColor: const Color(0xFF404040),
+                        unselectedItemColor: const Color(0xFFDDDDDD),
+                        selectedLabelStyle: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        unselectedLabelStyle: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        items: const [
+                          BottomNavigationBarItem(
+                            icon: Icon(Icons.home_outlined),
+                            label: '홈',
                           ),
-                          const SizedBox(height: 40),
+                          BottomNavigationBarItem(
+                            icon: Icon(Icons.calendar_month_outlined),
+                            label: '캘린더',
+                          ),
+                          BottomNavigationBarItem(
+                            icon: Icon(Icons.person_outline),
+                            label: '마이페이지',
+                          ),
                         ],
                       ),
                     ),
                   ),
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        offset: const Offset(0, -4),
-                        blurRadius: 6,
-                      ),
-                    ],
-                  ),
-                  child: SafeArea(
-                    top: false,
-                    child: BottomNavigationBar(
-                      type: BottomNavigationBarType.fixed,
-                      backgroundColor: Colors.white,
-                      elevation: 0,
-                      currentIndex: 1,
-                      onTap: (index) {
-                        if (index == 0) Get.back();
-                      },
-                      selectedItemColor: const Color(0xFF404040),
-                      unselectedItemColor: const Color(0xFFDDDDDD),
-                      selectedLabelStyle: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      unselectedLabelStyle: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      items: const [
-                        BottomNavigationBarItem(
-                          icon: Icon(Icons.home_outlined),
-                          label: '홈',
-                        ),
-                        BottomNavigationBarItem(
-                          icon: Icon(Icons.calendar_month_outlined),
-                          label: '캘린더',
-                        ),
-                        BottomNavigationBarItem(
-                          icon: Icon(Icons.person_outline),
-                          label: '마이페이지',
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
