@@ -72,4 +72,70 @@ class Schedule {
     this.isAnniversary = false,
     this.isImportant = false,
   });
+
+  Map<String, dynamic> toMap() {
+    String typeString;
+    switch (type) {
+      case ScheduleType.anniversary:
+        typeString = 'anniversary';
+        break;
+      case ScheduleType.care:
+        typeString = 'care';
+        break;
+      case ScheduleType.etc:
+        typeString = 'general'; // Map 'etc' to 'general' as requested
+        break;
+    }
+
+    return {
+      'id': id,
+      'title': title,
+      'startDateTime': startDateTime.toIso8601String(),
+      'endDateTime': endDateTime.toIso8601String(),
+      'allDay': allDay,
+      'type': typeString,
+      'personIds': personIds,
+      'groupId': groupId,
+      'isPlanned': isPlanned,
+      'repeatType': repeatType,
+      'alarmOffsetMinutes': alarmOffsetMinutes,
+      'description': description,
+      'isAnniversary': isAnniversary,
+      'isImportant': isImportant,
+    };
+  }
+
+  factory Schedule.fromMap(Map<String, dynamic> map) {
+    String typeString = map['type'] ?? 'general';
+    ScheduleType typeEnum;
+    switch (typeString) {
+      case 'anniversary':
+        typeEnum = ScheduleType.anniversary;
+        break;
+      case 'care':
+        typeEnum = ScheduleType.care;
+        break;
+      case 'general':
+      default:
+        typeEnum = ScheduleType.etc; // Map 'general' back to 'etc'
+        break;
+    }
+
+    return Schedule(
+      id: map['id'] ?? '',
+      title: map['title'] ?? '',
+      startDateTime: DateTime.parse(map['startDateTime']),
+      endDateTime: DateTime.parse(map['endDateTime']),
+      allDay: map['allDay'] ?? false,
+      type: typeEnum,
+      personIds: List<String>.from(map['personIds'] ?? []),
+      groupId: map['groupId'],
+      isPlanned: map['isPlanned'] ?? false,
+      repeatType: map['repeatType'] ?? 'NONE',
+      alarmOffsetMinutes: map['alarmOffsetMinutes'],
+      description: map['description'],
+      isAnniversary: map['isAnniversary'] ?? false,
+      isImportant: map['isImportant'] ?? false,
+    );
+  }
 }

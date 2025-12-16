@@ -56,7 +56,7 @@ class BirthdayScheduler {
 
   static Future<void> scheduleAnniversaries(Person person) async {
     // 1. Get all schedules
-    final allSchedules = _scheduleRepository.getSchedules();
+    final allSchedules = await _scheduleRepository.getSchedules();
 
     // 2. Find existing anniversary schedules for this person
     // We assume ID format: {personId}_anniv_{annivId}

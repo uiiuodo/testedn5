@@ -155,8 +155,8 @@ class PersonEditController extends GetxController {
     }
   }
 
-  void loadPerson(String id) {
-    final person = _personRepository.getPerson(id);
+  void loadPerson(String id) async {
+    final person = await _personRepository.getPerson(id);
     if (person != null) {
       nameController.text = person.name;
       phoneController.text = person.phone ?? '';

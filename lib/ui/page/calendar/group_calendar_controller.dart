@@ -58,11 +58,11 @@ class GroupCalendarController extends GetxController {
   }
 
   Future<void> fetchSchedules() async {
-    schedules.value = _scheduleRepository.getSchedules();
+    schedules.value = await _scheduleRepository.getSchedules();
   }
 
-  void fetchPeople() {
-    people.value = _personRepository.getPeople();
+  Future<void> fetchPeople() async {
+    people.value = await _personRepository.getPeople();
   }
 
   bool isSameDay(DateTime? a, DateTime? b) {

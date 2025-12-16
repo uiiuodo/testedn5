@@ -26,4 +26,24 @@ class PreferenceCategory {
     this.like,
     this.dislike,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'personId': personId,
+      'title': title,
+      'like': like,
+      'dislike': dislike,
+    };
+  }
+
+  factory PreferenceCategory.fromMap(Map<String, dynamic> map) {
+    return PreferenceCategory(
+      id: map['id'] ?? '',
+      personId: map['personId'] ?? '',
+      title: map['title'] ?? '',
+      like: map['like'],
+      dislike: map['dislike'],
+    );
+  }
 }

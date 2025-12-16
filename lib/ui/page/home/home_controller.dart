@@ -96,7 +96,7 @@ class HomeController extends GetxController {
   }
 
   Future<void> fetchPeople() async {
-    people.value = _personRepository.getPeople();
+    people.value = await _personRepository.getPeople();
     _sortPeople();
   }
 

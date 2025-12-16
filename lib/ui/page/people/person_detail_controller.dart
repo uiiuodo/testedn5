@@ -20,7 +20,7 @@ class PersonDetailController extends GetxController {
   }
 
   Future<void> loadPerson() async {
-    person.value = _personRepository.getPerson(personId);
+    person.value = await _personRepository.getPerson(personId);
 
     // Load Lunar Metadata
     if (Get.isRegistered<PersonMetadataService>()) {

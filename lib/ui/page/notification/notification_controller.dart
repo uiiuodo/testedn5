@@ -60,13 +60,13 @@ class NotificationController extends GetxController {
     fetchNotifications();
   }
 
-  void fetchNotifications() {
+  Future<void> fetchNotifications() async {
     List<AppNotification> list = [];
     final today = DateTime.now();
     final todayStart = DateTime(today.year, today.month, today.day);
 
     // 1. Fetch Person Anniversaries/Birthdays (Existing Logic)
-    final people = _personRepository.getPeople();
+    final people = await _personRepository.getPeople();
     for (final person in people) {
       if (person.birthDate != null) {
         final nextDate = _getNextEventDate(today, person.birthDate!);
@@ -110,7 +110,7 @@ class NotificationController extends GetxController {
     }
 
     // 2. Fetch Schedules
-    final schedules = _scheduleRepository.getSchedules();
+    final schedules = await _scheduleRepository.getSchedules();
     for (final schedule in schedules) {
       // Filter: Today onwards
       // Only if isAnniversary OR isImportant OR alarmOffsetMinutes != null

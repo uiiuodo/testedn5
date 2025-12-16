@@ -74,8 +74,10 @@ class PersonCalendarController extends GetxController {
     loadSchedules();
   }
 
-  void loadSchedules() {
-    final allSchedules = _scheduleRepository.getSchedulesByPerson(personId);
+  Future<void> loadSchedules() async {
+    final allSchedules = await _scheduleRepository.getSchedulesByPerson(
+      personId,
+    );
 
     // Group by date
     final Map<DateTime, List<Schedule>> newEvents = {};

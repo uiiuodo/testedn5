@@ -29,8 +29,8 @@ class MyRecordController extends GetxController {
     loadMyRecord();
   }
 
-  void loadMyRecord() {
-    var me = _personRepository.getPerson(myId);
+  Future<void> loadMyRecord() async {
+    var me = await _personRepository.getPerson(myId);
     if (me == null) {
       // Create default "Me" person if not exists
       me = Person(
@@ -39,7 +39,7 @@ class MyRecordController extends GetxController {
         groupId: '', // No group initially
         birthDate: DateTime(1996, 8, 30), // Default for demo
       );
-      _personRepository.addPerson(me);
+      await _personRepository.addPerson(me);
     }
     person.value = me;
 
