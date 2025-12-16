@@ -16,6 +16,10 @@ void main() async {
   await initializeDateFormatting();
   // 🔥 Firebase 초기화
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  debugPrint(
+    '🔥 Firebase Initialized. Project ID: ${Firebase.app().options.projectId}',
+  );
+  debugPrint('🔥 Firebase Options: ${Firebase.app().options.asMap}');
 
   // Initialize Hive and DataService
   await Get.putAsync(() => DataService().init());

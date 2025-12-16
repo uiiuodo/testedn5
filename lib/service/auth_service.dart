@@ -16,18 +16,30 @@ class AuthService extends GetxService {
   Future<AuthService> init() async {
     user = Rx<User?>(_auth.currentUser);
     user.bindStream(_auth.authStateChanges());
+
+    // ✅ Verification Log
+    ever(user, (u) {
+      if (u != null) {
+        debugPrint('[Auth] User Logged In: ${u.uid}');
+      } else {
+        debugPrint('[Auth] User Logged Out');
+      }
+    });
+
     return this;
   }
 
   Future<void> signInAnonymously() async {
     try {
       await _auth.signInAnonymously();
+    } on FirebaseAuthException catch (e) {
+      _handleAuthException(e);
     } catch (e) {
       Get.snackbar(
         '오류',
         '익명 로그인 실패: $e',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withOpacity(0.8),
+        backgroundColor: Colors.red.withOpacity(0.9),
         colorText: Colors.white,
       );
     }
@@ -73,30 +85,40 @@ class AuthService extends GetxService {
   }
 
   void _handleAuthException(FirebaseAuthException e) {
-    String message = '알 수 없는 오류가 발생했습니다.';
+    // Basic friendly message mapping
+    String friendlyMessage = '알 수 없는 오류가 발생했습니다.';
     switch (e.code) {
       case 'user-not-found':
-        message = '사용자를 찾을 수 없습니다.';
+        friendlyMessage = '사용자를 찾을 수 없습니다.';
         break;
       case 'wrong-password':
-        message = '잘못된 비밀번호입니다.';
+        friendlyMessage = '잘못된 비밀번호입니다.';
         break;
       case 'email-already-in-use':
-        message = '이미 사용 중인 이메일입니다.';
+        friendlyMessage = '이미 사용 중인 이메일입니다.';
         break;
       case 'invalid-email':
-        message = '유효하지 않은 이메일 형식입니다.';
+        friendlyMessage = '유효하지 않은 이메일 형식입니다.';
         break;
       case 'weak-password':
-        message = '비밀번호가 너무 약합니다.';
+        friendlyMessage = '비밀번호가 너무 약합니다.';
+        break;
+      case 'operation-not-allowed':
+        friendlyMessage = '이 로그인 방식이 비활성화되어 있습니다.';
+        break;
+      case 'network-request-failed':
+        friendlyMessage = '네트워크 연결을 확인해주세요.';
         break;
     }
+
+    // Show BOTH friendly message AND raw technical details for debugging
     Get.snackbar(
-      '오류',
-      message,
+      '오류 (${e.code})',
+      '$friendlyMessage\n[상세: ${e.message}]',
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.red.withOpacity(0.8),
+      backgroundColor: Colors.red.withOpacity(0.9),
       colorText: Colors.white,
+      duration: const Duration(seconds: 5),
     );
   }
 }
