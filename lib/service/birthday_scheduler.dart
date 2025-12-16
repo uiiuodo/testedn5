@@ -46,7 +46,7 @@ class BirthdayScheduler {
     );
 
     // Save to Repository
-    await _scheduleRepository.updateSchedule(schedule);
+    await _scheduleRepository.addSchedule(schedule);
 
     // Refresh NotificationController if alive
     if (Get.isRegistered<NotificationController>()) {
@@ -98,7 +98,7 @@ class BirthdayScheduler {
         isPlanned: false,
       );
 
-      await _scheduleRepository.updateSchedule(schedule);
+      await _scheduleRepository.addSchedule(schedule);
     }
 
     // Refresh NotificationController if alive

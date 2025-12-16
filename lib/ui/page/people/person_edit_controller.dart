@@ -205,61 +205,72 @@ class PersonEditController extends GetxController {
       return;
     }
 
-    final Map<String, String> extraInfoMap = {};
-    for (var entry in customFields) {
-      if (entry.value.text.isNotEmpty) {
-        extraInfoMap[entry.key] = entry.value.text;
+    try {
+      final Map<String, String> extraInfoMap = {};
+      for (var entry in customFields) {
+        if (entry.value.text.isNotEmpty) {
+          extraInfoMap[entry.key] = entry.value.text;
+        }
       }
+
+      final newPerson = Person(
+        id: personId ?? const Uuid().v4(),
+        name: nameController.text,
+        birthDate: showBirthDate.value ? birthDate.value : null,
+        phone: showPhone.value && phoneController.text.isNotEmpty
+            ? phoneController.text
+            : null,
+        address: showAddress.value && addressController.text.isNotEmpty
+            ? addressController.text
+            : null,
+        email: showEmail.value && emailController.text.isNotEmpty
+            ? emailController.text
+            : null,
+        groupId: selectedGroupId.value,
+        anniversaries: anniversaries,
+        memos: memos,
+        preferences: preferences,
+        mbti: showMbti.value && mbtiController.text.isNotEmpty
+            ? mbtiController.text
+            : null,
+        extraInfo: extraInfoMap,
+      );
+
+      if (personId != null) {
+        await _personRepository.updatePerson(newPerson);
+      } else {
+        await _personRepository.addPerson(newPerson);
+      }
+
+      // Save Lunar Metadata
+      final metadataService = Get.find<PersonMetadataService>();
+      await metadataService.setLunarBirthday(
+        newPerson.id,
+        isLunarBirth.value,
+        lunarBirthDate.value,
+      );
+
+      // Schedule Birthday Event
+      await BirthdayScheduler.scheduleBirthday(newPerson);
+      // Schedule Anniversary Events
+      await BirthdayScheduler.scheduleAnniversaries(newPerson);
+
+      // Refresh Home
+      if (Get.isRegistered<HomeController>()) {
+        Get.find<HomeController>().fetchPeople();
+      }
+
+      // Success Navigation
+      Get.back();
+    } catch (e) {
+      print('Error saving person: $e');
+      Get.snackbar(
+        '저장 실패',
+        '저장에 실패했습니다. 다시 시도해 주세요.',
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(20),
+      );
     }
-
-    final newPerson = Person(
-      id: personId ?? const Uuid().v4(),
-      name: nameController.text,
-      birthDate: showBirthDate.value ? birthDate.value : null,
-      phone: showPhone.value && phoneController.text.isNotEmpty
-          ? phoneController.text
-          : null,
-      address: showAddress.value && addressController.text.isNotEmpty
-          ? addressController.text
-          : null,
-      email: showEmail.value && emailController.text.isNotEmpty
-          ? emailController.text
-          : null,
-      groupId: selectedGroupId.value,
-      anniversaries: anniversaries,
-      memos: memos,
-      preferences: preferences,
-      mbti: showMbti.value && mbtiController.text.isNotEmpty
-          ? mbtiController.text
-          : null,
-      extraInfo: extraInfoMap,
-    );
-
-    if (personId != null) {
-      await _personRepository.updatePerson(newPerson);
-    } else {
-      await _personRepository.addPerson(newPerson);
-    }
-
-    // Save Lunar Metadata
-    final metadataService = Get.find<PersonMetadataService>();
-    await metadataService.setLunarBirthday(
-      newPerson.id,
-      isLunarBirth.value,
-      lunarBirthDate.value,
-    );
-
-    // Schedule Birthday Event
-    await BirthdayScheduler.scheduleBirthday(newPerson);
-    // Schedule Anniversary Events
-    await BirthdayScheduler.scheduleAnniversaries(newPerson);
-
-    // Refresh Home
-    if (Get.isRegistered<HomeController>()) {
-      Get.find<HomeController>().fetchPeople();
-    }
-
-    Get.back();
   }
 
   // Anniversary Logic
