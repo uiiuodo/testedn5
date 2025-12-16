@@ -286,9 +286,14 @@ class _EventItemState extends State<_EventItem> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (!widget.isAnniversarySection &&
-                      !widget.schedule.allDay) ...[
-                    const SizedBox(height: 4),
+                  const SizedBox(height: 4),
+
+                  // Date Range or Time Display
+                  if (!widget.schedule.allDay &&
+                      _isSameDay(
+                        widget.schedule.startDateTime,
+                        widget.schedule.endDateTime,
+                      )) ...[
                     Text(
                       '${widget.schedule.startDateTime.hour > 12 ? '오후 ${widget.schedule.startDateTime.hour - 12}' : '오전 ${widget.schedule.startDateTime.hour}'}:${widget.schedule.startDateTime.minute.toString().padLeft(2, '0')}',
                       style: const TextStyle(
@@ -296,11 +301,49 @@ class _EventItemState extends State<_EventItem> {
                         color: Color(0xFF9D9D9D),
                       ),
                     ),
-                  ] else if (widget.isAnniversarySection) ...[
-                    const SizedBox(height: 4),
-                    const Text(
-                      '매년 반복',
-                      style: TextStyle(fontSize: 10, color: Color(0xFF9D9D9D)),
+                  ] else if (!_isSameDay(
+                    widget.schedule.startDateTime,
+                    widget.schedule.endDateTime,
+                  )) ...[
+                    // Multi-day display: YY.MM.DD ~ YY.MM.DD (Total N days)
+                    Builder(
+                      builder: (context) {
+                        final start = widget.schedule.startDateTime;
+                        final end = widget.schedule.endDateTime;
+                        final diff =
+                            end
+                                .difference(
+                                  DateTime(start.year, start.month, start.day),
+                                )
+                                .inDays +
+                            1; // Inclusive
+                        return Text(
+                          '${DateFormat('yy.MM.dd').format(start)} ~ ${DateFormat('yy.MM.dd').format(end)} (총 ${diff}일)',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Color(0xFF9D9D9D),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+
+                  // Repeat Text Display
+                  if (widget.schedule.repeatType != 'NONE') ...[
+                    if (widget.schedule.allDay ||
+                        _isSameDay(
+                          widget.schedule.startDateTime,
+                          widget.schedule.endDateTime,
+                        ))
+                      const SizedBox(
+                        height: 4,
+                      ), // Add spacing if not already added by range
+                    Text(
+                      _getRepeatLabel(widget.schedule.repeatType),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Color(0xFF9D9D9D),
+                      ),
                     ),
                   ],
                 ],
@@ -318,6 +361,25 @@ class _EventItemState extends State<_EventItem> {
         ),
       ),
     );
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  String _getRepeatLabel(String? repeatType) {
+    switch (repeatType) {
+      case 'DAILY':
+        return '매일 반복';
+      case 'WEEKLY':
+        return '매주 반복';
+      case 'MONTHLY':
+        return '매월 반복';
+      case 'YEARLY':
+        return '매년 반복';
+      default:
+        return '';
+    }
   }
 
   void _showDeleteDialog() {

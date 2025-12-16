@@ -158,39 +158,44 @@ class PersonCalendarScreen extends GetView<PersonCalendarController> {
                                       maxChildSize: 0.9,
                                       expand: false,
                                       builder: (context, scrollController) {
-                                        return DayEventsSheet(
-                                          scrollController: scrollController,
-                                          selectedDate: selectedDay,
-                                          dayGroups: controller
-                                              .getDayScheduleGroups(
-                                                selectedDay,
-                                              ),
-                                          homeController:
-                                              Get.find<HomeController>(),
-                                          onTapSchedule: (schedule) async {
-                                            final result =
-                                                await Get.bottomSheet(
-                                                  ScheduleEditScreen(
-                                                    schedule: schedule,
-                                                    personId:
-                                                        controller.personId,
-                                                  ),
-                                                  isScrollControlled: true,
-                                                  backgroundColor:
-                                                      Colors.transparent,
+                                        return Obx(
+                                          () => DayEventsSheet(
+                                            scrollController: scrollController,
+                                            selectedDate: selectedDay,
+                                            dayGroups: controller
+                                                .getDayScheduleGroups(
+                                                  selectedDay,
+                                                ),
+                                            homeController:
+                                                Get.find<HomeController>(),
+                                            onTapSchedule: (schedule) async {
+                                              final result =
+                                                  await Get.bottomSheet(
+                                                    ScheduleEditScreen(
+                                                      schedule: schedule,
+                                                      personId:
+                                                          controller.personId,
+                                                    ),
+                                                    isScrollControlled: true,
+                                                    backgroundColor:
+                                                        Colors.transparent,
+                                                  );
+                                              if (result != null &&
+                                                  result is Schedule) {
+                                                await controller.updateSchedule(
+                                                  result,
                                                 );
-                                            if (result != null &&
-                                                result is Schedule) {
-                                              await controller.updateSchedule(
-                                                result,
+                                              } else {
+                                                await controller
+                                                    .fetchSchedules();
+                                              }
+                                            },
+                                            onDeleteSchedule: (id) async {
+                                              await controller.deleteSchedule(
+                                                id,
                                               );
-                                            } else {
-                                              await controller.fetchSchedules();
-                                            }
-                                          },
-                                          onDeleteSchedule: (id) async {
-                                            await controller.deleteSchedule(id);
-                                          },
+                                            },
+                                          ),
                                         );
                                       },
                                     );
