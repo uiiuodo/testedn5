@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "557243413306",
+    "project_id": "first-nugi",
+    "storage_bucket": "first-nugi.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:557243413306:android:477a219fd96bd1ed621603",
+        "android_client_info": {
+          "package_name": "com.example.testedn1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCU-umj5iymKDT0I0o3gCWIzevn4fZ6OZs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

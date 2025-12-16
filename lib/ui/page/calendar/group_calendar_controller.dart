@@ -1,16 +1,32 @@
 import 'package:get/get.dart';
 import '../../../../data/model/schedule.dart';
-import '../../../../data/model/group.dart';
+
 import '../../../../data/model/person.dart';
-import '../../../../data/repository/group_repository.dart';
+import '../../../../service/anniversary_service.dart';
+
 import '../../../../data/repository/schedule_repository.dart';
 import '../../../../data/repository/person_repository.dart';
 import '../home/home_controller.dart';
+import '../../../../data/repository/planned_task_repository.dart';
+import '../../../../data/model/planned_task.dart';
+import '../../../../data/model/day_schedule_groups.dart';
 
 class GroupCalendarController extends GetxController {
   final Rx<DateTime> focusedDay = DateTime.now().obs;
   final Rx<DateTime?> selectedDay = Rx<DateTime?>(null);
   final RxBool isEditMode = false.obs;
+
+  bool get isOnTodayMonth {
+    final now = DateTime.now();
+    return focusedDay.value.year == now.year &&
+        focusedDay.value.month == now.month;
+  }
+
+  void goToToday() {
+    final now = DateTime.now();
+    focusedDay.value = now;
+    selectedDay.value = now;
+  }
 
   // Filter State
   final RxString selectedGroupId = 'all'.obs;
@@ -21,8 +37,10 @@ class GroupCalendarController extends GetxController {
   // People - For Birthdays
   final RxList<Person> people = <Person>[].obs;
 
-  final GroupRepository _groupRepository = GroupRepository();
+  final RxList<PlannedTask> plannedTasks = <PlannedTask>[].obs;
+
   final ScheduleRepository _scheduleRepository = ScheduleRepository();
+  final PlannedTaskRepository _plannedTaskRepository = PlannedTaskRepository();
   final PersonRepository _personRepository = PersonRepository();
 
   @override
@@ -30,41 +48,41 @@ class GroupCalendarController extends GetxController {
     super.onInit();
     fetchSchedules();
     fetchPeople();
+    fetchPlannedTasks();
   }
 
-  void fetchSchedules() {
-    schedules.value = _scheduleRepository.getSchedules();
+  void fetchPlannedTasks() {
+    plannedTasks.value = _plannedTaskRepository.getTasksByGroup(
+      selectedGroupId.value,
+    );
   }
 
-  void fetchPeople() {
-    people.value = _personRepository.getPeople();
+  Future<void> fetchSchedules() async {
+    schedules.value = await _scheduleRepository.getSchedules();
+  }
+
+  Future<void> fetchPeople() async {
+    people.value = await _personRepository.getPeople();
+  }
+
+  bool isSameDay(DateTime? a, DateTime? b) {
+    if (a == null || b == null) {
+      return false;
+    }
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
   // Filter Logic
   List<Schedule> get filteredCalendarSchedules {
-    // For calendar, we show all schedules (planned or not) that match the group
-    // But typically "Calendar Schedules" might imply confirmed ones if we wanted to separate them visually.
-    // However, the requirement is to show everything on the calendar.
-    // So we filter by group only.
     if (selectedGroupId.value == 'all') {
       return schedules;
     }
     return schedules.where((s) => s.groupId == selectedGroupId.value).toList();
   }
 
-  List<Schedule> get filteredPlannedSchedules {
-    // For the list, we specifically want "Planned" schedules (isPlanned == true)
-    // filtered by group.
-    final planned = schedules.where((s) => s.isPlanned).toList();
-
-    if (selectedGroupId.value == 'all') {
-      return planned;
-    }
-    return planned.where((s) => s.groupId == selectedGroupId.value).toList();
-  }
-
   void selectGroup(String groupId) {
     selectedGroupId.value = groupId;
+    fetchPlannedTasks(); // Reload planned tasks for new group
     update();
   }
 
@@ -72,12 +90,11 @@ class GroupCalendarController extends GetxController {
     isEditMode.value = !isEditMode.value;
   }
 
-  List<String> getEventsForDay(DateTime day) {
-    final List<String> events = [];
+  List<Schedule> getDayItems(DateTime day) {
+    List<Schedule> items = [];
 
-    // 1. Add Schedule Events
+    // 1. Schedules
     final eventsForDay = filteredCalendarSchedules.where((s) {
-      // Check for multi-day overlap
       if (s.allDay || !isSameDay(s.startDateTime, s.endDateTime)) {
         final start = DateTime(
           s.startDateTime.year,
@@ -96,47 +113,134 @@ class GroupCalendarController extends GetxController {
       return isSameDay(s.startDateTime, day);
     }).toList();
 
-    events.addAll(eventsForDay.map((s) => s.title));
+    items.addAll(eventsForDay);
 
-    // 2. Add Birthday Events
+    // 2. Birthdays & Anniversaries
+    List<Person> allPeople = [];
+    try {
+      if (Get.isRegistered<HomeController>()) {
+        allPeople = Get.find<HomeController>().people;
+      } else {
+        allPeople = people;
+      }
+    } catch (e) {
+      allPeople = people;
+    }
+
     final filteredPeople = selectedGroupId.value == 'all'
-        ? people
-        : people.where((p) => p.groupId == selectedGroupId.value).toList();
+        ? allPeople
+        : allPeople.where((p) => p.groupId == selectedGroupId.value).toList();
 
     for (final person in filteredPeople) {
+      // Birthdays
       if (person.birthDate != null) {
         final birthDate = person.birthDate!;
         if (birthDate.month == day.month && birthDate.day == day.day) {
-          events.add('🎂 ${person.name}');
-        }
-      }
+          // Check for duplicate explicit schedule
+          final hasSchedule = filteredCalendarSchedules.any(
+            (s) =>
+                s.personIds.contains(person.id) &&
+                s.type == ScheduleType.anniversary &&
+                isSameDay(s.startDateTime, day),
+          );
 
-      // 3. Add Anniversary Events
-      for (final anniversary in person.anniversaries) {
-        if (anniversary.date.month == day.month &&
-            anniversary.date.day == day.day) {
-          events.add('🎉 ${anniversary.title}');
+          if (!hasSchedule) {
+            items.add(
+              Schedule(
+                id: 'birthday_${person.id}_${day.millisecondsSinceEpoch}',
+                title: '🎂 ${person.name}',
+                startDateTime: day,
+                endDateTime: day,
+                allDay: true,
+                type: ScheduleType.anniversary,
+                personIds: [person.id],
+                groupId: person.groupId,
+                isAnniversary: true,
+              ),
+            );
+          }
         }
       }
     }
 
-    return events;
+    // Anniversaries via Service
+    items.addAll(
+      AnniversaryService.getAnniversariesForDay(
+        filteredPeople,
+        day,
+        usePersonNamePrefix: true,
+      ),
+    );
+
+    // Sort: Anniversary (0) > Care (1) > Etc (2)
+    // Birthdays are Anniversary type, so they come first.
+    items.sort((a, b) {
+      return a.type.index.compareTo(b.type.index);
+    });
+
+    return items;
   }
 
-  bool isSameDay(DateTime? a, DateTime? b) {
-    if (a == null || b == null) {
-      return false;
+  DayScheduleGroups getDayScheduleGroups(DateTime day) {
+    final List<Schedule> all = getDayItems(day);
+
+    final care = <Schedule>[];
+    final anniversary = <Schedule>[];
+    final normal = <Schedule>[];
+
+    for (final s in all) {
+      // Logic from user request
+      // Care: isImportant (User said isCare)
+      final bool isCare = s.isImportant == true;
+      // Anniversary: isAnniversary OR birthday
+      final bool isBirthday = s.id.startsWith('birthday_');
+      final bool isAnniv = s.isAnniversary == true || isBirthday;
+
+      if (isCare) {
+        care.add(s);
+      } else if (isAnniv) {
+        anniversary.add(s);
+      } else {
+        normal.add(s);
+      }
     }
-    return a.year == b.year && a.month == b.month && a.day == b.day;
+
+    return DayScheduleGroups(
+      normal: normal,
+      care: care,
+      anniversary: anniversary,
+    );
   }
 
-  Future<void> deletePlannedSchedule(String id) async {
-    await _scheduleRepository.deleteSchedule(id);
-    fetchSchedules();
+  Future<void> addPlannedTask(String content) async {
+    final newTask = PlannedTask(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      content: content,
+      createdAt: DateTime.now(),
+      groupId: selectedGroupId.value == 'all' ? null : selectedGroupId.value,
+    );
+    await _plannedTaskRepository.addTask(newTask);
+    fetchPlannedTasks();
+  }
+
+  Future<void> updatePlannedTask(PlannedTask task, String newContent) async {
+    final updatedTask = task.copyWith(content: newContent);
+    await _plannedTaskRepository.updateTask(updatedTask);
+    fetchPlannedTasks();
+  }
+
+  Future<void> deletePlannedTask(String id) async {
+    await _plannedTaskRepository.deleteTask(id);
+    fetchPlannedTasks();
   }
 
   Future<void> updateSchedule(Schedule schedule) async {
     await _scheduleRepository.updateSchedule(schedule);
+    fetchSchedules();
+  }
+
+  Future<void> deleteSchedule(String id) async {
+    await _scheduleRepository.deleteSchedule(id);
     fetchSchedules();
   }
 
@@ -161,12 +265,7 @@ class GroupCalendarController extends GetxController {
       final homeController = Get.find<HomeController>();
       homeController.addGroup(name, colorValue);
     } catch (e) {
-      final newGroup = Group(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: name,
-        colorValue: colorValue,
-      );
-      await _groupRepository.addGroup(newGroup);
+      // print('Error adding group: $e');
     }
   }
 }

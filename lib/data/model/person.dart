@@ -37,6 +37,12 @@ class Person {
   @HiveField(10)
   final List<PreferenceCategory> preferences;
 
+  @HiveField(11)
+  final String? mbti;
+
+  @HiveField(12, defaultValue: {})
+  final Map<String, String> extraInfo;
+
   Person({
     required this.id,
     required this.name,
@@ -48,5 +54,55 @@ class Person {
     this.anniversaries = const [],
     this.memos = const [],
     this.preferences = const [],
+    this.mbti,
+    this.extraInfo = const {},
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'birthDate': birthDate?.toIso8601String(),
+      'phone': phone,
+      'address': address,
+      'email': email,
+      'groupId': groupId,
+      'mbti': mbti,
+      'extraInfo': extraInfo,
+      'anniversaries': anniversaries.map((e) => e.toMap()).toList(),
+      'memos': memos.map((e) => e.toMap()).toList(),
+      'preferences': preferences.map((e) => e.toMap()).toList(),
+    };
+  }
+
+  factory Person.fromMap(Map<String, dynamic> map) {
+    return Person(
+      id: map['id'] ?? '',
+      name: map['name'] ?? '',
+      birthDate: map['birthDate'] != null
+          ? DateTime.parse(map['birthDate'])
+          : null,
+      phone: map['phone'],
+      address: map['address'],
+      email: map['email'],
+      groupId: map['groupId'] ?? '',
+      mbti: map['mbti'],
+      extraInfo: Map<String, String>.from(map['extraInfo'] ?? {}),
+      anniversaries:
+          (map['anniversaries'] as List<dynamic>?)
+              ?.map((e) => Anniversary.fromMap(e))
+              .toList() ??
+          [],
+      memos:
+          (map['memos'] as List<dynamic>?)
+              ?.map((e) => Memo.fromMap(e))
+              .toList() ??
+          [],
+      preferences:
+          (map['preferences'] as List<dynamic>?)
+              ?.map((e) => PreferenceCategory.fromMap(e))
+              .toList() ??
+          [],
+    );
+  }
 }

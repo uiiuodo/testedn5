@@ -27,13 +27,16 @@ class PersonAdapter extends TypeAdapter<Person> {
       anniversaries: (fields[8] as List).cast<Anniversary>(),
       memos: (fields[9] as List).cast<Memo>(),
       preferences: (fields[10] as List).cast<PreferenceCategory>(),
+      mbti: fields[11] as String?,
+      extraInfo:
+          fields[12] == null ? {} : (fields[12] as Map).cast<String, String>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, Person obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -53,7 +56,11 @@ class PersonAdapter extends TypeAdapter<Person> {
       ..writeByte(9)
       ..write(obj.memos)
       ..writeByte(10)
-      ..write(obj.preferences);
+      ..write(obj.preferences)
+      ..writeByte(11)
+      ..write(obj.mbti)
+      ..writeByte(12)
+      ..write(obj.extraInfo);
   }
 
   @override

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../auth/login_page.dart';
+import '../home/home_page.dart';
+import '../../../service/auth_service.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -14,7 +16,11 @@ class _SplashPageState extends State<SplashPage> {
   void initState() {
     super.initState();
     Future.delayed(const Duration(seconds: 2), () {
-      Get.off(() => const LoginPage());
+      if (AuthService.to.isLoggedIn) {
+        Get.offAll(() => const HomePage());
+      } else {
+        Get.off(() => const LoginPage());
+      }
     });
   }
 

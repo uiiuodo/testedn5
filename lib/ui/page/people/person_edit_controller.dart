@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
+import 'package:lunar/lunar.dart';
 import '../../../data/model/person.dart';
 import '../../../data/model/group.dart';
 import '../../../data/model/anniversary.dart';
@@ -8,6 +9,8 @@ import '../../../data/model/memo.dart';
 import '../../../data/model/preference_category.dart';
 import '../../../data/repository/person_repository.dart';
 import '../../../data/repository/group_repository.dart';
+import '../../../service/person_metadata_service.dart';
+import '../../../service/birthday_scheduler.dart';
 import '../home/home_controller.dart';
 
 class PersonEditController extends GetxController {
@@ -22,23 +25,37 @@ class PersonEditController extends GetxController {
   final emailController = TextEditingController();
 
   final Rx<DateTime?> birthDate = Rx<DateTime?>(null);
+  final RxBool isLunarBirth = false.obs;
+  final Rx<DateTime?> lunarBirthDate = Rx<DateTime?>(null);
+  final RxBool isLeapMonth =
+      false.obs; // For Lunar leap month support if needed
   final RxString selectedGroupId = ''.obs;
 
   // Visibility Flags
-  final RxBool showBirthDate = false.obs;
-  final RxBool showPhone = false.obs;
-  final RxBool showAddress = false.obs;
-  final RxBool showEmail = false.obs;
+  final RxBool showBirthDate = true.obs;
+  final RxBool showPhone = true.obs;
+  final RxBool showAddress = true.obs;
+  final RxBool showEmail = true.obs;
+  final RxBool showMbti = true.obs;
 
   final RxList<Anniversary> anniversaries = <Anniversary>[].obs;
   final RxList<Memo> memos = <Memo>[].obs;
   final RxList<PreferenceCategory> preferences = <PreferenceCategory>[].obs;
+  final RxSet<String> expandedCategories = <String>{}.obs;
+
+  // New Fields (Memory Only)
+  final mbtiController = TextEditingController();
+  final RxBool showLunar = false.obs; // Legacy, check if used
+  final RxList<MapEntry<String, TextEditingController>> customFields =
+      <MapEntry<String, TextEditingController>>[].obs;
+  final RxString koreanAge = ''.obs;
 
   final RxList<Group> groups = <Group>[].obs;
 
   // UI State for inline adding
   final RxBool isAddingAnniversary = false.obs;
-  final Rx<DateTime> newAnniversaryDate = DateTime.now().obs;
+  final Rx<DateTime> newAnniversaryDate = Rx<DateTime>(DateTime.now());
+  final RxBool newAnniversaryHasYear = true.obs;
   final newAnniversaryTitleController = TextEditingController();
   final newMemoController = TextEditingController();
 
@@ -51,19 +68,61 @@ class PersonEditController extends GetxController {
     if (personId != null) {
       loadPerson(personId!);
     }
+
+    // Listen to birthDate changes to calculate Korean Age
+    ever(birthDate, (_) => _calculateKoreanAge());
   }
 
-  void fetchGroups() {
-    groups.value = _groupRepository.getGroups();
+  void _calculateKoreanAge() {
+    if (birthDate.value == null) {
+      koreanAge.value = '';
+      return;
+    }
+    final now = DateTime.now();
+    final birthYear = birthDate.value!.year;
+    final currentYear = now.year;
+    // Korean Age (Man Age) calculation
+    int age = currentYear - birthYear;
+    if (now.month < birthDate.value!.month ||
+        (now.month == birthDate.value!.month &&
+            now.day < birthDate.value!.day)) {
+      age--;
+    }
+    koreanAge.value = '만 $age세';
   }
 
-  void addNewGroup(String name) async {
-    // Generate a random color for the new group
-    // Simple random color generation for now
-    final int colorValue =
-        (0xFF000000 + (DateTime.now().millisecondsSinceEpoch & 0xFFFFFF)) |
-        0xFF000000;
+  void setBirthDate(DateTime date, bool isLunar) {
+    if (isLunar) {
+      final lunar = Lunar.fromYmd(date.year, date.month, date.day);
+      final solar = lunar.getSolar();
+      final solarDate = DateTime(
+        solar.getYear(),
+        solar.getMonth(),
+        solar.getDay(),
+      );
 
+      lunarBirthDate.value = date;
+      birthDate.value = solarDate;
+      isLunarBirth.value = true;
+    } else {
+      lunarBirthDate.value = null;
+      birthDate.value = date;
+      isLunarBirth.value = false;
+    }
+  }
+
+  void pickBirthDate(BuildContext context) async {
+    // We will use a custom dialog in the UI to handle Solar/Lunar selection
+    // This method might be deprecated or updated to show that dialog
+  }
+
+  void fetchGroups() async {
+    final loadedGroups = await _groupRepository.getGroups();
+    loadedGroups.sort((a, b) => a.name.compareTo(b.name));
+    groups.value = loadedGroups;
+  }
+
+  void addNewGroup(String name, int colorValue) async {
     final newGroup = Group(
       id: const Uuid().v4(),
       name: name,
@@ -75,8 +134,29 @@ class PersonEditController extends GetxController {
     selectedGroupId.value = newGroup.id;
   }
 
-  void loadPerson(String id) {
-    final person = _personRepository.getPerson(id);
+  void updateGroup(String id, String newName) async {
+    final group = groups.firstWhereOrNull((g) => g.id == id);
+    if (group != null) {
+      final updatedGroup = Group(
+        id: group.id,
+        name: newName,
+        colorValue: group.colorValue,
+      );
+      await _groupRepository.updateGroup(updatedGroup);
+      fetchGroups();
+    }
+  }
+
+  void deleteGroup(String id) async {
+    await _groupRepository.deleteGroup(id);
+    fetchGroups();
+    if (selectedGroupId.value == id) {
+      selectedGroupId.value = '';
+    }
+  }
+
+  void loadPerson(String id) async {
+    final person = await _personRepository.getPerson(id);
     if (person != null) {
       nameController.text = person.name;
       phoneController.text = person.phone ?? '';
@@ -88,11 +168,30 @@ class PersonEditController extends GetxController {
       memos.value = List.from(person.memos);
       preferences.value = List.from(person.preferences);
 
-      // Set visibility flags based on data presence
-      showBirthDate.value = person.birthDate != null;
-      showPhone.value = person.phone != null && person.phone!.isNotEmpty;
-      showAddress.value = person.address != null && person.address!.isNotEmpty;
-      showEmail.value = person.email != null && person.email!.isNotEmpty;
+      // Initialize expanded categories (all expanded by default)
+      expandedCategories.clear();
+      for (var p in person.preferences) {
+        expandedCategories.add(p.title);
+      }
+
+      // Note: MBTI, Custom Fields logic
+      mbtiController.text = person.mbti ?? '';
+      showMbti.value = person.mbti != null && person.mbti!.isNotEmpty;
+
+      customFields.clear();
+      person.extraInfo.forEach((key, value) {
+        customFields.add(MapEntry(key, TextEditingController(text: value)));
+      });
+
+      // We do NOT set visibility flags to false here, because we want them visible by default
+      // so the user can edit them. They are UI state only.
+      // If we wanted to hide empty fields, we would do:
+      // showPhone.value = person.phone != null && person.phone!.isNotEmpty;
+      // But per instructions, we initialize them to true.
+      // Load Lunar Metadata
+      final metadataService = Get.find<PersonMetadataService>();
+      isLunarBirth.value = metadataService.getIsLunar(id);
+      lunarBirthDate.value = metadataService.getLunarDate(id);
     }
   }
 
@@ -106,51 +205,124 @@ class PersonEditController extends GetxController {
       return;
     }
 
-    final newPerson = Person(
-      id: personId ?? const Uuid().v4(),
-      name: nameController.text,
-      birthDate: showBirthDate.value ? birthDate.value : null,
-      phone: showPhone.value && phoneController.text.isNotEmpty
-          ? phoneController.text
-          : null,
-      address: showAddress.value && addressController.text.isNotEmpty
-          ? addressController.text
-          : null,
-      email: showEmail.value && emailController.text.isNotEmpty
-          ? emailController.text
-          : null,
-      groupId: selectedGroupId.value,
-      anniversaries: anniversaries,
-      memos: memos,
-      preferences: preferences,
-    );
+    try {
+      final Map<String, String> extraInfoMap = {};
+      for (var entry in customFields) {
+        if (entry.value.text.isNotEmpty) {
+          extraInfoMap[entry.key] = entry.value.text;
+        }
+      }
 
-    if (personId != null) {
-      await _personRepository.updatePerson(newPerson);
-    } else {
-      await _personRepository.addPerson(newPerson);
+      final newPerson = Person(
+        id: personId ?? const Uuid().v4(),
+        name: nameController.text,
+        birthDate: showBirthDate.value ? birthDate.value : null,
+        phone: showPhone.value && phoneController.text.isNotEmpty
+            ? phoneController.text
+            : null,
+        address: showAddress.value && addressController.text.isNotEmpty
+            ? addressController.text
+            : null,
+        email: showEmail.value && emailController.text.isNotEmpty
+            ? emailController.text
+            : null,
+        groupId: selectedGroupId.value,
+        anniversaries: anniversaries,
+        memos: memos,
+        preferences: preferences,
+        mbti: showMbti.value && mbtiController.text.isNotEmpty
+            ? mbtiController.text
+            : null,
+        extraInfo: extraInfoMap,
+      );
+
+      if (personId != null) {
+        await _personRepository.updatePerson(newPerson);
+      } else {
+        await _personRepository.addPerson(newPerson);
+      }
+
+      // Save Lunar Metadata
+      final metadataService = Get.find<PersonMetadataService>();
+      await metadataService.setLunarBirthday(
+        newPerson.id,
+        isLunarBirth.value,
+        lunarBirthDate.value,
+      );
+
+      // Schedule Birthday Event
+      await BirthdayScheduler.scheduleBirthday(newPerson);
+      // Schedule Anniversary Events
+      await BirthdayScheduler.scheduleAnniversaries(newPerson);
+
+      // Refresh Home
+      if (Get.isRegistered<HomeController>()) {
+        Get.find<HomeController>().fetchPeople();
+      }
+
+      // Success Navigation
+      Get.back();
+    } catch (e) {
+      print('Error saving person: $e');
+      Get.snackbar(
+        '저장 실패',
+        '저장에 실패했습니다. 다시 시도해 주세요.',
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(20),
+      );
     }
-
-    // Refresh Home
-    if (Get.isRegistered<HomeController>()) {
-      Get.find<HomeController>().fetchPeople();
-    }
-
-    Get.back();
   }
 
-  void addAnniversary(String title, DateTime date) {
+  // Anniversary Logic
+  void addAnniversary(String title, DateTime date, bool hasYear) {
     anniversaries.add(
       Anniversary(
         id: const Uuid().v4(),
-        personId: personId ?? '', // Will be updated on save if new
+        personId: personId ?? '',
         title: title,
         date: date,
-        type: AnniversaryType.etc, // Default
+        type: AnniversaryType.etc,
+        hasYear: hasYear,
       ),
     );
   }
 
+  void addEmptyAnniversary() {
+    anniversaries.add(
+      Anniversary(
+        id: const Uuid().v4(),
+        personId: personId ?? '',
+        title: '',
+        date: DateTime.now(),
+        type: AnniversaryType.etc,
+        hasYear: true,
+      ),
+    );
+  }
+
+  void removeAnniversary(int index) {
+    removeAnniversaryAt(index);
+  }
+
+  void removeAnniversaryAt(int index) {
+    if (index >= 0 && index < anniversaries.length) {
+      anniversaries.removeAt(index);
+    }
+  }
+
+  void updateAnniversary(int index, String title, DateTime date, bool hasYear) {
+    final oldAnniv = anniversaries[index];
+    anniversaries[index] = Anniversary(
+      id: oldAnniv.id,
+      personId: oldAnniv.personId,
+      title: title,
+      date: date,
+      type: oldAnniv.type,
+      hasYear: hasYear,
+    );
+  }
+
+  // Memo Logic
   void addMemo(String content) {
     memos.add(
       Memo(
@@ -163,47 +335,25 @@ class PersonEditController extends GetxController {
     newMemoController.clear();
   }
 
-  void addPreference(String title, String? like, String? dislike) {
-    preferences.add(
-      PreferenceCategory(
+  void addEmptyMemo() {
+    memos.add(
+      Memo(
         id: const Uuid().v4(),
         personId: personId ?? '',
-        title: title,
-        like: like,
-        dislike: dislike,
+        createdAt: DateTime.now(),
+        content: '',
       ),
     );
   }
 
-  void updateAnniversary(int index, String title, DateTime date) {
-    final oldAnniv = anniversaries[index];
-    anniversaries[index] = Anniversary(
-      id: oldAnniv.id,
-      personId: oldAnniv.personId,
-      title: title,
-      date: date,
-      type: oldAnniv.type,
-    );
+  void removeMemo(int index) {
+    removeMemoAt(index);
   }
 
-  void removeAnniversary(int index) {
-    anniversaries.removeAt(index);
-  }
-
-  void updatePreference(
-    int index,
-    String title,
-    String? like,
-    String? dislike,
-  ) {
-    final oldPref = preferences[index];
-    preferences[index] = PreferenceCategory(
-      id: oldPref.id,
-      personId: oldPref.personId,
-      title: title,
-      like: like,
-      dislike: dislike,
-    );
+  void removeMemoAt(int index) {
+    if (index >= 0 && index < memos.length) {
+      memos.removeAt(index);
+    }
   }
 
   void updateMemo(int index, String content) {
@@ -216,11 +366,110 @@ class PersonEditController extends GetxController {
     );
   }
 
-  void removeMemo(int index) {
-    memos.removeAt(index);
+  // Preference Logic
+  void addPreference(String title, String like, String dislike) {
+    preferences.add(
+      PreferenceCategory(
+        id: const Uuid().v4(),
+        personId: personId ?? '',
+        title: title,
+        like: like,
+        dislike: dislike,
+      ),
+    );
+  }
+
+  void updatePreference(int index, String title, String like, String dislike) {
+    final oldPref = preferences[index];
+    preferences[index] = PreferenceCategory(
+      id: oldPref.id,
+      personId: oldPref.personId,
+      title: title,
+      like: like,
+      dislike: dislike,
+    );
   }
 
   void removePreference(int index) {
     preferences.removeAt(index);
+  }
+
+  void addPreferences(
+    String category,
+    List<String> likes,
+    List<String> dislikes,
+  ) {
+    for (final content in likes) {
+      preferences.add(
+        PreferenceCategory(
+          id: const Uuid().v4(),
+          personId: personId ?? '',
+          title: category,
+          like: content,
+          dislike: null,
+        ),
+      );
+    }
+    for (final content in dislikes) {
+      preferences.add(
+        PreferenceCategory(
+          id: const Uuid().v4(),
+          personId: personId ?? '',
+          title: category,
+          like: null,
+          dislike: content,
+        ),
+      );
+    }
+  }
+
+  void updatePreferenceGroup(
+    String oldCategory,
+    String newCategory,
+    List<String> newLikes,
+    List<String> newDislikes,
+  ) {
+    // 1. Remove ALL items matching oldCategory (both likes and dislikes)
+    preferences.removeWhere((p) => p.title == oldCategory);
+
+    // 2. Add new items
+    addPreferences(newCategory, newLikes, newDislikes);
+
+    // 3. Update expanded categories if category name changed
+    if (oldCategory != newCategory) {
+      if (expandedCategories.contains(oldCategory)) {
+        expandedCategories.remove(oldCategory);
+        expandedCategories.add(newCategory);
+      }
+    } else {
+      // Ensure it stays expanded if it was expanded
+      if (!expandedCategories.contains(newCategory)) {
+        expandedCategories.add(newCategory);
+      }
+    }
+  }
+
+  void addCustomField(String title, String content) {
+    customFields.add(MapEntry(title, TextEditingController(text: content)));
+  }
+
+  void removeCustomField(int index) {
+    customFields.removeAt(index);
+  }
+
+  // Preference Category Logic
+  void toggleCategoryExpansion(String category) {
+    if (expandedCategories.contains(category)) {
+      expandedCategories.remove(category);
+    } else {
+      expandedCategories.add(category);
+    }
+  }
+
+  void removePreferenceCategory(String category) {
+    // Remove all preferences with this category title
+    preferences.removeWhere((p) => p.title == category);
+    // Remove from expanded set
+    expandedCategories.remove(category);
   }
 }

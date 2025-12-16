@@ -27,11 +27,37 @@ class Anniversary {
   @HiveField(4)
   final AnniversaryType type;
 
+  @HiveField(5)
+  final bool hasYear;
+
   Anniversary({
     required this.id,
     required this.personId,
     required this.title,
     required this.date,
     required this.type,
+    this.hasYear = true,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'personId': personId,
+      'title': title,
+      'date': date.toIso8601String(),
+      'type': type.index, // Hive uses index, Firestore can too or string
+      'hasYear': hasYear,
+    };
+  }
+
+  factory Anniversary.fromMap(Map<String, dynamic> map) {
+    return Anniversary(
+      id: map['id'] ?? '',
+      personId: map['personId'] ?? '',
+      title: map['title'] ?? '',
+      date: DateTime.parse(map['date']),
+      type: AnniversaryType.values[map['type'] as int],
+      hasYear: map['hasYear'] ?? true,
+    );
+  }
 }

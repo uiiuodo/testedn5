@@ -14,6 +14,7 @@ class HomeController extends GetxController {
   final RxString selectedGroupId = 'all'.obs;
   final RxString searchQuery = ''.obs;
   final RxInt tabIndex = 0.obs;
+  final RxBool isReorderMode = false.obs;
 
   List<Person> get filteredPeople {
     // Return people in their current order (which is sorted by _sortPeople)
@@ -24,6 +25,11 @@ class HomeController extends GetxController {
       final matchesSearch = person.name.contains(searchQuery.value);
       return matchesGroup && matchesSearch;
     }).toList();
+  }
+
+  List<Group> get usedGroups {
+    final usedIds = people.map((p) => p.groupId).toSet();
+    return groups.where((g) => usedIds.contains(g.id)).toList();
   }
 
   void selectGroup(String groupId) {
@@ -49,6 +55,32 @@ class HomeController extends GetxController {
     fetchGroups();
   }
 
+  void updateGroup(String id, String newName) async {
+    final group = groups.firstWhereOrNull((g) => g.id == id);
+    if (group != null) {
+      final updatedGroup = Group(
+        id: group.id,
+        name: newName,
+        colorValue: group.colorValue,
+      );
+      await _groupRepository.updateGroup(updatedGroup);
+      fetchGroups();
+    }
+  }
+
+  void deleteGroup(String id) async {
+    await _groupRepository.deleteGroup(id);
+    fetchGroups();
+    if (selectedGroupId.value == id) {
+      selectedGroupId.value = 'all';
+    }
+  }
+
+  Future<void> deletePerson(String id) async {
+    await _personRepository.deletePerson(id);
+    fetchPeople();
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -57,12 +89,14 @@ class HomeController extends GetxController {
     _loadPersonOrder();
   }
 
-  void fetchGroups() {
-    groups.value = _groupRepository.getGroups();
+  Future<void> fetchGroups() async {
+    final loadedGroups = await _groupRepository.getGroups();
+    loadedGroups.sort((a, b) => a.name.compareTo(b.name));
+    groups.value = loadedGroups;
   }
 
-  void fetchPeople() {
-    people.value = _personRepository.getPeople();
+  Future<void> fetchPeople() async {
+    people.value = await _personRepository.getPeople();
     _sortPeople();
   }
 
@@ -85,7 +119,10 @@ class HomeController extends GetxController {
   }
 
   void _sortPeople() {
-    if (_personOrder.isEmpty) return;
+    if (_personOrder.isEmpty) {
+      people.sort((a, b) => a.name.compareTo(b.name));
+      return;
+    }
 
     final orderMap = {
       for (var i = 0; i < _personOrder.length; i++) _personOrder[i]: i,
@@ -94,6 +131,10 @@ class HomeController extends GetxController {
     people.sort((a, b) {
       final indexA = orderMap[a.id] ?? 999999;
       final indexB = orderMap[b.id] ?? 999999;
+      // If both are new (999999), sort them alphabetically
+      if (indexA == 999999 && indexB == 999999) {
+        return a.name.compareTo(b.name);
+      }
       return indexA.compareTo(indexB);
     });
   }
@@ -110,6 +151,11 @@ class HomeController extends GetxController {
     // If we are filtered, reordering might be ambiguous.
     // Let's assume reordering is primarily for the "All" view or we map back to the global list.
     // For simplicity and robustness, let's operate on the displayed list IDs and update the global order.
+
+    // If this is the first reorder, initialize the order list with current alphabetical order
+    if (_personOrder.isEmpty) {
+      _personOrder.addAll(people.map((p) => p.id));
+    }
 
     final currentList = filteredPeople;
     final item = currentList.removeAt(oldIndex);

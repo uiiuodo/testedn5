@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import '../../../data/model/person.dart';
 import '../calendar/person_calendar/person_calendar_screen.dart';
 import '../calendar/person_calendar/person_calendar_controller.dart';
 import '../../../data/model/anniversary.dart';
@@ -11,6 +12,8 @@ import '../../theme/app_text_styles.dart';
 import '../../widgets/common/custom_app_bar.dart';
 import 'person_detail_controller.dart';
 import 'person_edit_screen.dart';
+import '../../widgets/common/refreshable_layout.dart';
+import '../../../service/auth_service.dart';
 
 class PersonDetailScreen extends StatefulWidget {
   final String personId;
@@ -37,10 +40,20 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
           IconButton(
             icon: const Icon(Icons.edit_outlined, color: AppColors.primary),
             onPressed: () async {
+              if (AuthService.to.isGuest) {
+                Get.snackbar(
+                  '알림',
+                  '둘러보기 모드에서는 수정할 수 없어요.\n회원가입 후 이용해 주세요.',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.black.withOpacity(0.8),
+                  colorText: Colors.white,
+                );
+                return;
+              }
               // Navigate to Edit Screen with personId
               await Get.to(() => PersonEditScreen(personId: widget.personId));
               // Refresh data on return
-              controller.loadPerson();
+              await controller.loadPerson();
             },
           ),
         ],
@@ -51,115 +64,177 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
           if (person == null)
             return const Center(child: CircularProgressIndicator());
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 1. Basic Info
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: const Color(0xFFDEDEDE)),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            person.name,
-                            style: AppTextStyles.header2.copyWith(
-                              color: AppColors.textSecondary,
+          return RefreshableLayout(
+            onRefresh: () async {
+              await controller.loadPerson();
+            },
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 1. Basic Info
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: const Color(0xFFDEDEDE)),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              person.name,
+                              style: AppTextStyles.header2.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      _buildInfoRow(
-                        '생년월일',
-                        person.birthDate != null
-                            ? DateFormat('yyyy.MM.dd').format(person.birthDate!)
-                            : '-',
-                      ),
-                      _buildInfoRow('전화번호', person.phone ?? '-'),
-                      _buildInfoRow('주소', person.address ?? '-'),
-                      _buildInfoRow('e-mail', person.email ?? '-'),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 30),
-
-                // 2. Anniversaries
-                _buildSectionHeader('기념일'),
-                const SizedBox(height: 10),
-                Column(
-                  children: person.anniversaries
-                      .map((anniv) => _buildAnniversaryCard(anniv))
-                      .toList(),
-                ),
-                const SizedBox(height: 30),
-
-                // 3. Memos
-                _buildSectionHeader('메모'),
-                const SizedBox(height: 10),
-                Column(
-                  children: person.memos
-                      .map((memo) => _buildMemoCard(memo))
-                      .toList(),
-                ),
-                const SizedBox(height: 30),
-
-                // 4. Preferences
-                _buildSectionHeader('취향 기록'),
-                const SizedBox(height: 10),
-                Column(
-                  children: person.preferences
-                      .map((pref) => _buildPreferenceAccordion(pref))
-                      .toList(),
-                ),
-                const SizedBox(height: 40),
-
-                // 6. Bottom Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Get.to(
-                        () => const PersonCalendarScreen(),
-                        binding: BindingsBuilder(() {
-                          Get.put(
-                            PersonCalendarController(personId: widget.personId),
-                          );
-                        }),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      '이 사람과의 개인 캘린더로 이동',
-                      style: AppTextStyles.button.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        _buildInfoRow(
+                          '생년월일',
+                          _buildBirthdayText(person, controller),
+                        ),
+                        _buildInfoRow('전화번호', person.phone),
+                        _buildInfoRow('주소', person.address),
+                        _buildInfoRow('e-mail', person.email),
+                        _buildInfoRow('MBTI', person.mbti),
+                        ...person.extraInfo.entries.map(
+                          (e) => _buildInfoRow(e.key, e.value),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
-              ],
+                  const SizedBox(height: 30),
+
+                  // 2. Anniversaries
+                  _buildSectionHeader('기념일'),
+                  const SizedBox(height: 10),
+                  Column(
+                    children: person.anniversaries
+                        .map((anniv) => _buildAnniversaryCard(anniv))
+                        .toList(),
+                  ),
+                  const SizedBox(height: 30),
+
+                  // 3. Memos
+                  _buildSectionHeader('메모'),
+                  const SizedBox(height: 10),
+                  Column(
+                    children: person.memos
+                        .map((memo) => _buildMemoCard(memo))
+                        .toList(),
+                  ),
+                  const SizedBox(height: 30),
+
+                  // 4. Preferences
+                  _buildSectionHeader('취향 기록'),
+                  const SizedBox(height: 10),
+                  _buildPreferenceList(person.preferences),
+                  const SizedBox(height: 40),
+
+                  // 6. Bottom Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Get.to(
+                          () => const PersonCalendarScreen(),
+                          binding: BindingsBuilder(() {
+                            Get.put(
+                              PersonCalendarController(
+                                personId: widget.personId,
+                              ),
+                            );
+                          }),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        '이 사람과의 개인 캘린더로 이동',
+                        style: AppTextStyles.button.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           );
         }),
       ),
     );
+  }
+
+  Widget _buildPreferenceList(List<PreferenceCategory> preferences) {
+    final grouped = <String, List<PreferenceCategory>>{};
+    for (var p in preferences) {
+      if (!grouped.containsKey(p.title)) grouped[p.title] = [];
+      grouped[p.title]!.add(p);
+    }
+
+    return Column(
+      children: grouped.entries.map((entry) {
+        final title = entry.key;
+        final prefs = entry.value;
+
+        final likesList = prefs
+            .where((p) => p.like != null && p.like!.isNotEmpty)
+            .map((p) => p.like!)
+            .toList();
+        final dislikesList = prefs
+            .where((p) => p.dislike != null && p.dislike!.isNotEmpty)
+            .map((p) => p.dislike!)
+            .toList();
+
+        return _PreferenceAccordion(
+          title: title,
+          likes: likesList,
+          dislikes: dislikesList,
+        );
+      }).toList(),
+    );
+  }
+
+  String? _buildBirthdayText(Person person, PersonDetailController controller) {
+    if (person.birthDate == null) return null;
+
+    // Calculate International Age (Man Age)
+    final age = _calculateInternationalAge(person.birthDate);
+    final ageText = age != null ? ' (만 ${age}세)' : '';
+
+    if (controller.isLunarBirth.value &&
+        controller.lunarBirthDate.value != null) {
+      return '음력 ${DateFormat('yyyy.MM.dd').format(controller.lunarBirthDate.value!)}$ageText';
+    }
+    return '${DateFormat('yyyy.MM.dd').format(person.birthDate!)}$ageText';
+  }
+
+  int? _calculateInternationalAge(DateTime? birthDate) {
+    if (birthDate == null) return null;
+
+    final now = DateTime.now();
+    int age = now.year - birthDate.year;
+
+    if (now.month < birthDate.month ||
+        (now.month == birthDate.month && now.day < birthDate.day)) {
+      age--;
+    }
+    return age;
   }
 
   Widget _buildSectionHeader(String title) {
@@ -179,7 +254,10 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String? value) {
+    if (value == null || value.trim().isEmpty || value == '-') {
+      return const SizedBox.shrink();
+    }
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
@@ -219,7 +297,9 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
             style: const TextStyle(fontSize: 13, color: Color(0xFF2A2A2A)),
           ),
           Text(
-            DateFormat('yyyy.MM.dd').format(anniv.date),
+            anniv.hasYear
+                ? DateFormat('yyyy.MM.dd').format(anniv.date)
+                : DateFormat('MM.dd').format(anniv.date),
             style: const TextStyle(fontSize: 13, color: Color(0xFF2A2A2A)),
           ),
         ],
@@ -246,16 +326,18 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
       ),
     );
   }
-
-  Widget _buildPreferenceAccordion(PreferenceCategory preference) {
-    return _PreferenceAccordion(preference: preference);
-  }
 }
 
 class _PreferenceAccordion extends StatefulWidget {
-  final PreferenceCategory preference;
+  final String title;
+  final List<String> likes;
+  final List<String> dislikes;
 
-  const _PreferenceAccordion({required this.preference});
+  const _PreferenceAccordion({
+    required this.title,
+    required this.likes,
+    required this.dislikes,
+  });
 
   @override
   State<_PreferenceAccordion> createState() => _PreferenceAccordionState();
@@ -281,7 +363,7 @@ class _PreferenceAccordionState extends State<_PreferenceAccordion> {
               children: [
                 Expanded(
                   child: Text(
-                    widget.preference.title,
+                    widget.title,
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
@@ -302,21 +384,11 @@ class _PreferenceAccordionState extends State<_PreferenceAccordion> {
         ),
         if (isExpanded) ...[
           const SizedBox(height: 8),
-          if (widget.preference.like != null &&
-              widget.preference.like!.isNotEmpty)
-            _buildDetailBox(
-              '선호',
-              widget.preference.like!,
-              const Color(0xFF00A6FF),
-            ),
+          if (widget.likes.isNotEmpty)
+            _buildDetailBox('선호', widget.likes, const Color(0xFF00A6FF)),
           const SizedBox(height: 8),
-          if (widget.preference.dislike != null &&
-              widget.preference.dislike!.isNotEmpty)
-            _buildDetailBox(
-              '비선호',
-              widget.preference.dislike!,
-              const Color(0xFF979797),
-            ),
+          if (widget.dislikes.isNotEmpty)
+            _buildDetailBox('비선호', widget.dislikes, const Color(0xFF979797)),
           const SizedBox(height: 16),
         ],
         const Divider(height: 1, color: Color(0xFFEEEEEE)),
@@ -325,7 +397,7 @@ class _PreferenceAccordionState extends State<_PreferenceAccordion> {
     );
   }
 
-  Widget _buildDetailBox(String label, String content, Color color) {
+  Widget _buildDetailBox(String label, List<String> items, Color color) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -345,13 +417,18 @@ class _PreferenceAccordionState extends State<_PreferenceAccordion> {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            content,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFF464646),
-              height: 1.4,
-              fontWeight: FontWeight.w300,
+          ...items.map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: 2),
+              child: Text(
+                '• $item',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF464646),
+                  height: 1.4,
+                  fontWeight: FontWeight.w300,
+                ),
+              ),
             ),
           ),
         ],
