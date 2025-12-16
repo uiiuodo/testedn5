@@ -12,7 +12,17 @@ class MyRecordController extends GetxController {
   static const String myId = 'me';
 
   final Rx<Person?> person = Rx<Person?>(null);
-  final RxBool isDeleteMode = false.obs;
+  // Mode State
+  final RxBool isEditMode = false.obs;
+  // Delete Mode logic is merged into Edit Mode behavior or separate if needed.
+  // Requirement says: View Mode (Pencil) vs Edit Mode (Save).
+  // We can keep isDeleteMode for granular deletions inside Edit Mode?
+  // Let's assume Edit Mode enables all editing, including deletion.
+  // But user request specifically mentions "View/Edit Mode" toggle.
+
+  // We will use isEditMode for general editing state.
+  // And existing isDeleteMode can be used for showing 'X' buttons within lists if we want to keep it separate or auto-enable it in Edit Mode.
+  // Let's rely on isEditMode for enabling interactions.
 
   // Editable Fields
   final Rx<DateTime?> birthDate = Rx<DateTime?>(null);
@@ -30,6 +40,7 @@ class MyRecordController extends GetxController {
   }
 
   Future<void> loadMyRecord() async {
+    isEditMode.value = false; // Start in View Mode
     var me = await _personRepository.getPerson(myId);
     if (me == null) {
       // Create default "Me" person if not exists
@@ -37,7 +48,7 @@ class MyRecordController extends GetxController {
         id: myId,
         name: '나', // Default name
         groupId: '', // No group initially
-        birthDate: DateTime(1996, 8, 30), // Default for demo
+        birthDate: null, // [Fix 1] Default to null (empty)
       );
       await _personRepository.addPerson(me);
     }
@@ -49,13 +60,25 @@ class MyRecordController extends GetxController {
     memos.assignAll(me.memos);
     preferences.assignAll(me.preferences);
 
-    // Initialize expanded categories (expand all by default)
+    // Initialize expanded categories
     final categories = me.preferences.map((e) => e.title).toSet();
     expandedCategories.assignAll(categories);
   }
 
-  void toggleDeleteMode() {
-    isDeleteMode.value = !isDeleteMode.value;
+  void toggleEditMode() {
+    if (isEditMode.value) {
+      // If canceling edit mode, reload original data?
+      // Or just switch flag. Standard is usually "Save" or "Cancel".
+      // User request: Pencil -> Edit Mode (shows Save button).
+      // Save -> Saves and returns to View Mode.
+      // So toggleEditMode here is mainly entering Edit Mode.
+      // We might need a "cancel" or just assume saving is the only exit?
+      // Request doesn't specify cancel. Just "View -> Edit -> Save -> View".
+      // Let's implement entering edit mode.
+      isEditMode.value = true;
+    } else {
+      isEditMode.value = true;
+    }
   }
 
   Future<void> saveMyRecord() async {
@@ -78,8 +101,8 @@ class MyRecordController extends GetxController {
       await _personRepository.updatePerson(updatedPerson);
       person.value = updatedPerson;
 
-      // Exit delete mode after save (optional, but good UX)
-      isDeleteMode.value = false;
+      // [Fix 2] Return to View Mode on success
+      isEditMode.value = false;
 
       Get.snackbar(
         '저장 완료',
@@ -88,6 +111,7 @@ class MyRecordController extends GetxController {
         margin: const EdgeInsets.all(20),
       );
     } catch (e) {
+      // Keep Edit Mode on failure
       Get.snackbar(
         '저장 실패',
         '저장에 문제가 발생했습니다. 다시 시도해 주세요',

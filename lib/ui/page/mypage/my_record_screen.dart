@@ -24,30 +24,52 @@ class MyRecordScreen extends StatelessWidget {
           onPressed: () => Get.back(),
         ),
         actions: [
-          // Pen Icon: Toggle Delete Mode
-          Obx(
-            () => IconButton(
-              icon: Icon(
-                Icons.edit_outlined,
-                color: controller.isDeleteMode.value
-                    ? AppColors.primary
-                    : Colors.black,
-              ),
-              onPressed: controller.toggleDeleteMode,
-            ),
-          ),
-          // Check Icon: Save
-          IconButton(
-            icon: const Icon(Icons.check, color: Colors.black),
-            onPressed: controller.saveMyRecord,
-          ),
-          const SizedBox(width: 8),
+          // Toggle View/Edit Mode
+          Obx(() {
+            if (controller.isEditMode.value) {
+              // Edit Mode: Show "Register" (Save) Button
+              return Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: Center(
+                  child: GestureDetector(
+                    onTap: controller.saveMyRecord,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        '등록하기',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            } else {
+              // View Mode: Show Pencil (Edit) Icon
+              return IconButton(
+                icon: const Icon(Icons.edit_outlined, color: Colors.black),
+                onPressed: controller.toggleEditMode,
+              );
+            }
+          }),
         ],
       ),
       body: Obx(() {
         if (controller.person.value == null) {
           return const Center(child: CircularProgressIndicator());
         }
+
+        final isEditing = controller.isEditMode.value;
 
         return SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
@@ -78,18 +100,20 @@ class MyRecordScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: 20),
                   GestureDetector(
-                    onTap: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate:
-                            controller.birthDate.value ?? DateTime.now(),
-                        firstDate: DateTime(1900),
-                        lastDate: DateTime.now(),
-                      );
-                      if (date != null) {
-                        controller.updateBirthDate(date);
-                      }
-                    },
+                    onTap: !isEditing
+                        ? null
+                        : () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate:
+                                  controller.birthDate.value ?? DateTime.now(),
+                              firstDate: DateTime(1900),
+                              lastDate: DateTime.now(),
+                            );
+                            if (date != null) {
+                              controller.updateBirthDate(date);
+                            }
+                          },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -102,11 +126,13 @@ class MyRecordScreen extends StatelessWidget {
                       child: Text(
                         controller.birthDate.value != null
                             ? '${DateFormat('yyyy.MM.dd').format(controller.birthDate.value!)} ${_calculateAge(controller.birthDate.value!)}'
-                            : '입력해주세요',
-                        style: const TextStyle(
+                            : (isEditing ? '선택해주세요' : '-'), // Placeholder logic
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w300,
-                          color: Color(0xFF2A2A2A),
+                          color: controller.birthDate.value == null && isEditing
+                              ? AppColors.primary
+                              : const Color(0xFF2A2A2A),
                         ),
                       ),
                     ),
@@ -125,15 +151,16 @@ class MyRecordScreen extends StatelessWidget {
                     '기념일',
                     iconColor: const Color(0xFFB0B0B0),
                   ),
-                  GestureDetector(
-                    onTap: () =>
-                        _showAnniversaryBottomSheet(context, controller),
-                    child: const Icon(
-                      Icons.add,
-                      size: 20,
-                      color: Color(0xFF9D9D9D),
+                  if (isEditing)
+                    GestureDetector(
+                      onTap: () =>
+                          _showAnniversaryBottomSheet(context, controller),
+                      child: const Icon(
+                        Icons.add,
+                        size: 20,
+                        color: Color(0xFF9D9D9D),
+                      ),
                     ),
-                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -160,12 +187,14 @@ class MyRecordScreen extends StatelessWidget {
                           Row(
                             children: [
                               GestureDetector(
-                                onTap: () => controller.updateAnniversary(
-                                  index,
-                                  anniv.title,
-                                  anniv.date,
-                                  true,
-                                ),
+                                onTap: !isEditing
+                                    ? null
+                                    : () => controller.updateAnniversary(
+                                        index,
+                                        anniv.title,
+                                        anniv.date,
+                                        true,
+                                      ),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 8,
@@ -195,12 +224,14 @@ class MyRecordScreen extends StatelessWidget {
                               ),
                               const SizedBox(width: 8),
                               GestureDetector(
-                                onTap: () => controller.updateAnniversary(
-                                  index,
-                                  anniv.title,
-                                  anniv.date,
-                                  false,
-                                ),
+                                onTap: !isEditing
+                                    ? null
+                                    : () => controller.updateAnniversary(
+                                        index,
+                                        anniv.title,
+                                        anniv.date,
+                                        false,
+                                      ),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 8,
@@ -229,7 +260,7 @@ class MyRecordScreen extends StatelessWidget {
                                 ),
                               ),
                               const Spacer(),
-                              if (controller.isDeleteMode.value)
+                              if (isEditing)
                                 GestureDetector(
                                   onTap: () {
                                     controller.removeAnniversaryAt(index);
@@ -248,6 +279,7 @@ class MyRecordScreen extends StatelessWidget {
                               Expanded(
                                 child: TextFormField(
                                   initialValue: anniv.title,
+                                  enabled: isEditing, // Toggle Editable
                                   onChanged: (val) {
                                     controller.updateAnniversary(
                                       index,
@@ -270,22 +302,24 @@ class MyRecordScreen extends StatelessWidget {
                                 ),
                               ),
                               GestureDetector(
-                                onTap: () async {
-                                  final date = await showDatePicker(
-                                    context: context,
-                                    initialDate: anniv.date,
-                                    firstDate: DateTime(1900),
-                                    lastDate: DateTime(2100),
-                                  );
-                                  if (date != null) {
-                                    controller.updateAnniversary(
-                                      index,
-                                      anniv.title,
-                                      date,
-                                      anniv.hasYear,
-                                    );
-                                  }
-                                },
+                                onTap: !isEditing
+                                    ? null
+                                    : () async {
+                                        final date = await showDatePicker(
+                                          context: context,
+                                          initialDate: anniv.date,
+                                          firstDate: DateTime(1900),
+                                          lastDate: DateTime(2100),
+                                        );
+                                        if (date != null) {
+                                          controller.updateAnniversary(
+                                            index,
+                                            anniv.title,
+                                            date,
+                                            anniv.hasYear,
+                                          );
+                                        }
+                                      },
                                 child: Text(
                                   anniv.hasYear
                                       ? DateFormat(
@@ -313,14 +347,15 @@ class MyRecordScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _buildSectionHeader('메모', iconColor: const Color(0xFFB0B0B0)),
-                  GestureDetector(
-                    onTap: () => controller.addEmptyMemo(),
-                    child: const Icon(
-                      Icons.add,
-                      size: 20,
-                      color: Color(0xFF9D9D9D),
+                  if (isEditing)
+                    GestureDetector(
+                      onTap: () => controller.addEmptyMemo(),
+                      child: const Icon(
+                        Icons.add,
+                        size: 20,
+                        color: Color(0xFF9D9D9D),
+                      ),
                     ),
-                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -345,6 +380,7 @@ class MyRecordScreen extends StatelessWidget {
                           Expanded(
                             child: TextFormField(
                               initialValue: memo.content,
+                              enabled: isEditing, // Toggle Editable
                               onChanged: (value) {
                                 controller.updateMemo(index, value);
                               },
@@ -365,7 +401,7 @@ class MyRecordScreen extends StatelessWidget {
                               ),
                             ),
                           ),
-                          if (controller.isDeleteMode.value)
+                          if (isEditing)
                             GestureDetector(
                               onTap: () {
                                 controller.removeMemoAt(index);
@@ -392,15 +428,16 @@ class MyRecordScreen extends StatelessWidget {
                     '취향 기록',
                     iconColor: const Color(0xFFB0B0B0),
                   ),
-                  GestureDetector(
-                    onTap: () =>
-                        _showPreferenceBottomSheet(context, controller),
-                    child: const Icon(
-                      Icons.add,
-                      size: 20,
-                      color: Color(0xFF9D9D9D),
+                  if (isEditing)
+                    GestureDetector(
+                      onTap: () =>
+                          _showPreferenceBottomSheet(context, controller),
+                      child: const Icon(
+                        Icons.add,
+                        size: 20,
+                        color: Color(0xFF9D9D9D),
+                      ),
                     ),
-                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -498,6 +535,7 @@ class MyRecordScreen extends StatelessWidget {
     required List<String> dislikesList,
   }) {
     final isExpanded = controller.expandedCategories.contains(title);
+    final isEditing = controller.isEditMode.value;
 
     return Container(
       decoration: BoxDecoration(
@@ -533,7 +571,7 @@ class MyRecordScreen extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  if (controller.isDeleteMode.value)
+                  if (isEditing) // Only show delete in Edit Mode
                     GestureDetector(
                       onTap: () {
                         Get.defaultDialog(
@@ -566,15 +604,18 @@ class MyRecordScreen extends StatelessWidget {
                 children: [
                   if (likesList.isNotEmpty || dislikesList.isNotEmpty) ...[
                     GestureDetector(
-                      onTap: () {
-                        _showPreferenceBottomSheet(
-                          context,
-                          controller,
-                          category: title,
-                          initialLikes: likesList,
-                          initialDislikes: dislikesList,
-                        );
-                      },
+                      onTap:
+                          !isEditing // Only editable in Edit Mode
+                          ? null
+                          : () {
+                              _showPreferenceBottomSheet(
+                                context,
+                                controller,
+                                category: title,
+                                initialLikes: likesList,
+                                initialDislikes: dislikesList,
+                              );
+                            },
                       child: Column(
                         children: [
                           if (likesList.isNotEmpty)
