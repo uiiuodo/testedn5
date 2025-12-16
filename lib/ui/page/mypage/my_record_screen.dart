@@ -6,6 +6,7 @@ import '../people/preference_add_bottom_sheet.dart';
 import '../../widgets/common/anniversary_bottom_sheet.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_text_styles.dart';
 
 class MyRecordScreen extends StatelessWidget {
   const MyRecordScreen({super.key});
@@ -28,29 +29,13 @@ class MyRecordScreen extends StatelessWidget {
           Obx(() {
             if (controller.isEditMode.value) {
               // Edit Mode: Show "Register" (Save) Button
-              return Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: Center(
-                  child: GestureDetector(
-                    onTap: controller.saveMyRecord,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        '등록하기',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
+              return TextButton(
+                onPressed: controller.saveMyRecord,
+                child: Text(
+                  '등록하기',
+                  style: AppTextStyles.body2.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               );
