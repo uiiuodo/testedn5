@@ -25,22 +25,8 @@ class DataService extends GetxService {
 
     // Open Boxes
     await Hive.openBox<Person>('people');
-    await Hive.openBox<Group>('groups');
     await Hive.openBox<Schedule>('schedules');
     await Hive.openBox<PlannedTask>('planned_tasks');
-
-    // Initialize default groups if empty
-    final groupBox = Hive.box<Group>('groups');
-    if (groupBox.isEmpty) {
-      await groupBox.add(
-        Group(id: 'family', name: '가족', colorValue: 0xFFFFD1DC),
-      );
-      await groupBox.add(
-        Group(id: 'friend', name: '지인', colorValue: 0xFFFFF5BA),
-      );
-      await groupBox.add(Group(id: 'work', name: '직장', colorValue: 0xFFD4F0F0));
-      await groupBox.add(Group(id: 'etc', name: '기타', colorValue: 0xFFE0E0E0));
-    }
 
     return this;
   }

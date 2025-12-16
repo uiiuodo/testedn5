@@ -116,8 +116,8 @@ class PersonEditController extends GetxController {
     // This method might be deprecated or updated to show that dialog
   }
 
-  void fetchGroups() {
-    final loadedGroups = _groupRepository.getGroups();
+  void fetchGroups() async {
+    final loadedGroups = await _groupRepository.getGroups();
     loadedGroups.sort((a, b) => a.name.compareTo(b.name));
     groups.value = loadedGroups;
   }

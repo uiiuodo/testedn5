@@ -90,7 +90,7 @@ class HomeController extends GetxController {
   }
 
   Future<void> fetchGroups() async {
-    final loadedGroups = _groupRepository.getGroups();
+    final loadedGroups = await _groupRepository.getGroups();
     loadedGroups.sort((a, b) => a.name.compareTo(b.name));
     groups.value = loadedGroups;
   }
