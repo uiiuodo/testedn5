@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.example.testedn1</string>
+	<string>com.uni.testedn1</string>
 	<key>PROJECT_ID</key>
 	<string>first-nugi</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:557243413306:ios:cab73b0bdc059218621603</string>
+	<string>1:557243413306:ios:64b27e4f90576668621603</string>
 </dict>
 </plist>

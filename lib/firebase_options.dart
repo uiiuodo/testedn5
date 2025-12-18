@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCU-umj5iymKDT0I0o3gCWIzevn4fZ6OZs',
-    appId: '1:557243413306:android:477a219fd96bd1ed621603',
+    appId: '1:557243413306:android:6648dae433165d0e621603',
     messagingSenderId: '557243413306',
     projectId: 'first-nugi',
     storageBucket: 'first-nugi.firebasestorage.app',
@@ -59,10 +59,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyCGk_9HVK3mxpzySsNEk6XOIzZMWWiAH4M',
-    appId: '1:557243413306:ios:cab73b0bdc059218621603',
+    appId: '1:557243413306:ios:64b27e4f90576668621603',
     messagingSenderId: '557243413306',
     projectId: 'first-nugi',
     storageBucket: 'first-nugi.firebasestorage.app',
-    iosBundleId: 'com.example.testedn1',
+    iosBundleId: 'com.uni.testedn1',
   );
+
 }
